@@ -1733,6 +1733,10 @@
           <input type="date" id="ped_fecha">
         </div>
         <div class="field">
+          <label>N° de pedido</label>
+          <input type="text" id="ped_numero" placeholder="Ej: 00123" maxlength="5" style="font-family:var(--font-mono);letter-spacing:.05em;">
+        </div>
+        <div class="field">
           <label>Cliente</label>
           <input type="text" id="ped_cliente" list="listaClientes" placeholder="Razón social del cliente">
         </div>
@@ -1740,6 +1744,23 @@
         <div class="field full">
           <div id="itemsProductosPedidoContainer"></div>
           <button type="button" class="ghost" id="btnAgregarItemProductoPedido" style="margin-top:6px;">+ Agregar producto</button>
+        </div>
+        <div class="form-section-label">Condiciones de pago</div>
+        <div class="field">
+          <label>Condición de pago</label>
+          <select id="ped_condicion">
+            <option value="Contado">Contado</option>
+            <option value="Cuenta corriente">Cuenta corriente</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Método de pago</label>
+          <select id="ped_metodo">
+            <option value="Transferencia">Transferencia</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Cheque">Cheque</option>
+            <option value="Otro">Otro</option>
+          </select>
         </div>
         <div class="field full">
           <label>Notas (opcional)</label>
@@ -2665,6 +2686,16 @@ function aplicarModalidadPagoCliente() {
   if (cliente.notas && !$('f_notas').value.trim()) $('f_notas').value = cliente.notas;
 }
 
+function aplicarModalidadPagoClientePedido() {
+  const nombre = $('ped_cliente').value.trim();
+  if (!nombre) return;
+  const cliente = clientes.find(c => c.nombre.trim().toLowerCase() === nombre.toLowerCase());
+  if (!cliente) return;
+  if (cliente.condicion_habitual) $('ped_condicion').value = cliente.condicion_habitual;
+  if (cliente.metodo_habitual) $('ped_metodo').value = cliente.metodo_habitual;
+  if (cliente.notas && !$('ped_notas').value.trim()) $('ped_notas').value = cliente.notas;
+}
+
 let itemsProductosForm = [];
 
 function renderItemsProductos() {
@@ -2751,7 +2782,10 @@ function abrirFormularioPedido() {
   limpiarValidaciones();
   $('pedidoFormTitulo').textContent = 'Cargar nuevo pedido';
   $('ped_fecha').value = toISODate(new Date());
+  $('ped_numero').value = '';
   $('ped_cliente').value = '';
+  $('ped_condicion').value = 'Contado';
+  $('ped_metodo').value = 'Transferencia';
   $('ped_notas').value = '';
   itemsProductosFormPedido = [{producto: '', cantidad: ''}];
   renderItemsProductosPedido();
@@ -2770,7 +2804,10 @@ function editarPedido(id) {
   editandoPedidoId = id;
   $('pedidoFormTitulo').textContent = 'Editar pedido';
   $('ped_fecha').value = p.fecha;
+  $('ped_numero').value = p.numero || '';
   $('ped_cliente').value = p.cliente || '';
+  $('ped_condicion').value = p.condicion || 'Contado';
+  $('ped_metodo').value = p.metodo || 'Transferencia';
   $('ped_notas').value = p.notas || '';
   itemsProductosFormPedido = itemsProductosDesdePedido(p);
   renderItemsProductosPedido();
@@ -2781,6 +2818,7 @@ function editarPedido(id) {
 async function guardarPedido() {
   const cliente = $('ped_cliente').value.trim();
   const fecha = $('ped_fecha').value;
+  const numero = $('ped_numero').value.trim();
   if (!cliente || !fecha) {
     mostrarAviso('Completá el cliente y la fecha del pedido.', 'error');
     return;
@@ -2797,13 +2835,16 @@ async function guardarPedido() {
     return;
   }
 
+  const condicion = $('ped_condicion').value;
+  const metodo = $('ped_metodo').value;
+
   if (editandoPedidoId) {
     const p = pedidosPendientes.find(x => x.id === editandoPedidoId);
-    Object.assign(p, {cliente, fecha, productos: productosFinal, notas: $('ped_notas').value.trim()});
+    Object.assign(p, {cliente, fecha, numero, condicion, metodo, productos: productosFinal, notas: $('ped_notas').value.trim()});
   } else {
     pedidosPendientes.push({
       id: 'ped_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-      cliente, fecha,
+      cliente, fecha, numero, condicion, metodo,
       productos: productosFinal,
       notas: $('ped_notas').value.trim(),
       facturado: false,
@@ -2831,6 +2872,7 @@ function pedidoCardHTML(p) {
       <div class="pedido-card-header">
         <div class="pedido-card-titulo">
           <span class="cliente">${escapeHtml(p.cliente || 'Sin cliente')}</span>
+          ${p.numero ? `<span class="factura">N° ${escapeHtml(p.numero)}</span>` : ''}
           <span class="badge ${p.facturado ? 'pagado' : 'porvencer'}">${p.facturado ? 'Facturado' : 'Pendiente de facturar'}</span>
         </div>
         <span class="pedido-card-cantidad">${cantidad} ítems</span>
@@ -2839,6 +2881,7 @@ function pedidoCardHTML(p) {
       <div class="row-dates">
         <span>Pedido: ${formatFecha(p.fecha)}</span>
         ${p.facturado ? `<span>Facturado: ${formatFecha(p.fecha_facturado)}</span>` : ''}
+        ${p.condicion || p.metodo ? `<span>${escapeHtml(p.condicion || '')}${p.condicion && p.metodo ? ' · ' : ''}${escapeHtml(p.metodo || '')}</span>` : ''}
       </div>
       ${p.notas ? `<div class="nota">📝 ${escapeHtml(p.notas)}</div>` : ''}
       <div class="row-actions" style="margin-top:8px;">
@@ -2859,6 +2902,7 @@ function pedidosFiltrados() {
     const q = busquedaPedidos.trim().toLowerCase();
     lista = lista.filter(p =>
       (p.cliente || '').toLowerCase().includes(q) ||
+      (p.numero || '').toLowerCase().includes(q) ||
       (p.productos || []).some(it => (it.producto || '').toLowerCase().includes(q))
     );
   }
@@ -3308,6 +3352,7 @@ $('btnGuardarPago').addEventListener('click', guardarPago);
 $('p_cliente_select').addEventListener('input', renderFacturasClientePago);
 $('btnAgregarPagoItem').addEventListener('click', agregarPagoItem);
 $('f_cliente').addEventListener('input', aplicarModalidadPagoCliente);
+$('ped_cliente').addEventListener('input', aplicarModalidadPagoClientePedido);
 $('btnCancelar').addEventListener('click', cerrarFormulario);
 $('btnGuardar').addEventListener('click', guardarVenta);
 $('buscador').addEventListener('input', (e) => { busqueda = e.target.value; renderLedger(); });
@@ -4267,6 +4312,9 @@ function migrarPedidosPendientes() {
   pedidosPendientes.forEach(p => {
     if (p.facturado === undefined) p.facturado = false;
     if (p.fecha_facturado === undefined) p.fecha_facturado = null;
+    if (p.numero === undefined) p.numero = '';
+    if (p.condicion === undefined) p.condicion = '';
+    if (p.metodo === undefined) p.metodo = '';
     if (!p.productos) {
       p.productos = p.cantidad != null ? [{producto: '', cantidad: p.cantidad}] : [];
       p.notas = p.nota || '';
