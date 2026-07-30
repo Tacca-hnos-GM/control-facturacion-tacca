@@ -417,6 +417,118 @@
   .rev-subnav-link.active{background:var(--graphite);color:#fff;border-color:var(--graphite);box-shadow:0 2px 6px rgba(3,74,166,.35);}
   .rev-panel{animation:rev-panel-in .15s ease-out;}
   @keyframes rev-panel-in{from{opacity:0;}to{opacity:1;}}
+
+  .dash-kpi-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:14px;
+    margin-bottom:16px;
+  }
+  .dash-kpi-card{
+    background:var(--card);
+    border:1px solid var(--hairline);
+    border-radius:14px;
+    padding:16px 18px;
+    box-shadow:0 1px 3px rgba(27,32,35,.06);
+  }
+  .dash-kpi-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+  }
+  .dash-kpi-title{
+    font-family:var(--font-body);
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-muted);
+  }
+  .dash-kpi-icon{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+  }
+  .dash-kpi-value{
+    font-family:var(--font-display);
+    font-size:26px;
+    font-weight:700;
+    color:var(--text);
+    margin-bottom:4px;
+  }
+  .dash-kpi-delta{
+    font-family:var(--font-body);
+    font-size:12px;
+    font-weight:600;
+  }
+  .dash-kpi-delta.up{color:var(--green);}
+  .dash-kpi-delta.down{color:var(--orange);}
+  .dash-kpi-delta.flat{color:var(--text-muted);}
+
+  .dash-grid{
+    display:grid;
+    grid-template-columns:1fr 1.4fr;
+    gap:16px;
+  }
+  @media (max-width:820px){
+    .dash-grid{grid-template-columns:1fr;}
+  }
+  .dash-goal-body{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+  .dash-goal-info{flex:1;min-width:150px;}
+  .dash-goal-texto{
+    font-family:var(--font-body);
+    font-size:12.5px;
+    color:var(--text-muted);
+    margin-bottom:10px;
+  }
+  .dash-goal-linea{
+    display:flex;
+    justify-content:space-between;
+    font-family:var(--font-body);
+    font-size:12.5px;
+    padding:5px 0;
+    border-top:1px dashed var(--hairline);
+  }
+  .dash-goal-linea:first-of-type{border-top:none;}
+  .dash-goal-linea b{font-family:var(--font-mono);}
+  .dash-eficiencia-body{
+    display:flex;
+    align-items:center;
+    gap:24px;
+    flex-wrap:wrap;
+  }
+  .dash-eficiencia-pct{
+    font-family:var(--font-display);
+    font-size:44px;
+    font-weight:700;
+    color:var(--blue);
+    flex-shrink:0;
+    min-width:110px;
+  }
+  .dash-eficiencia-info{flex:1;min-width:200px;}
+  .dash-eficiencia-bar-track{
+    width:100%;
+    height:12px;
+    background:#E7EAE9;
+    border-radius:6px;
+    overflow:hidden;
+    margin-bottom:10px;
+  }
+  .dash-eficiencia-bar-fill{
+    height:100%;
+    background:var(--blue);
+    border-radius:6px;
+    width:0%;
+    transition:width .4s ease;
+  }
   .chip{
     font-family:var(--font-body);
     font-size:13px;
@@ -640,6 +752,29 @@
   .row.vencido{border-left-color:var(--orange);}
   .row.porvencer{border-left-color:var(--amber);}
   .row.pagado{border-left-color:var(--green);opacity:.8;}
+  .pedido-card{
+    background:var(--card);
+    border:1px solid var(--hairline);
+    border-left:5px solid var(--amber);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .pedido-card.facturado{border-left-color:var(--green);opacity:.85;}
+  .pedido-card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:4px;
+  }
+  .pedido-card-titulo{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;}
+  .pedido-card-cantidad{
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:15px;
+  }
   .row-main{min-width:0;}
   .row-top{
     display:flex;
@@ -1448,6 +1583,7 @@
   <div class="tabs-row">
     <div class="tabs" id="tabs">
       <span class="tab active" data-tab="ventas">Ventas</span>
+      <span class="tab" data-tab="pedidos">Pedidos</span>
       <span class="tab" data-tab="calendario">Calendario</span>
       <span class="tab" data-tab="deudores">Bitácora de deudores</span>
       <span class="tab" data-tab="bitacoraventas">Bitácora de ventas</span>
@@ -1577,6 +1713,50 @@
   </div>
   </div>
 
+  <div id="viewPedidos" style="display:none;">
+    <div class="toolbar">
+      <button class="primary" id="btnNuevoPedido">+ Nuevo pedido</button>
+      <input type="text" id="buscadorPedidos" placeholder="Buscar por cliente o producto...">
+      <div class="chip-group" id="filtrosPedidos">
+        <span class="chip active" data-filter="todos">Todos</span>
+        <span class="chip" data-filter="pendiente">Pendientes de facturar</span>
+        <span class="chip" data-filter="facturado">Ya facturados</span>
+      </div>
+    </div>
+
+    <div class="formpanel" id="pedidoPanel">
+      <h2 id="pedidoFormTitulo">Cargar nuevo pedido</h2>
+      <div class="formgrid">
+        <div class="form-section-label">Datos del pedido</div>
+        <div class="field">
+          <label>Fecha del pedido</label>
+          <input type="date" id="ped_fecha">
+        </div>
+        <div class="field">
+          <label>Cliente</label>
+          <input type="text" id="ped_cliente" list="listaClientes" placeholder="Razón social del cliente">
+        </div>
+        <div class="form-section-label">Productos</div>
+        <div class="field full">
+          <div id="itemsProductosPedidoContainer"></div>
+          <button type="button" class="ghost" id="btnAgregarItemProductoPedido" style="margin-top:6px;">+ Agregar producto</button>
+        </div>
+        <div class="field full">
+          <label>Notas (opcional)</label>
+          <input type="text" id="ped_notas" placeholder="Aclaraciones sobre el pedido">
+        </div>
+      </div>
+      <div class="formactions">
+        <button class="ghost" id="btnCancelarPedido">Cancelar</button>
+        <button class="primary" id="btnGuardarPedido">Guardar pedido</button>
+      </div>
+    </div>
+
+    <div id="contenidoPedidos">
+      <div class="loading">Cargando pedidos...</div>
+    </div>
+  </div>
+
   <div id="viewRevision" style="display:none;">
     <div class="period-row">
       <div class="chip-group" id="periodQuick">
@@ -1599,7 +1779,8 @@
     </div>
 
     <div class="rev-subnav" id="revSubnav">
-      <span class="rev-subnav-link active" data-target="panel-objetivo">Objetivo del mes</span>
+      <span class="rev-subnav-link active" data-target="panel-dashboard">🏢 Dashboard</span>
+      <span class="rev-subnav-link" data-target="panel-objetivo">Objetivo del mes</span>
       <span class="rev-subnav-link" data-target="panel-quien-venderle">A quién venderle más</span>
       <span class="rev-subnav-link" data-target="panel-comparacion">Comparación de período</span>
       <span class="rev-subnav-link" data-target="panel-evolucion">Evolución mensual</span>
@@ -1607,7 +1788,77 @@
       <span class="rev-subnav-link" data-target="panel-top-productos">Top productos</span>
     </div>
 
-    <div class="rev-panel" id="panel-objetivo">
+    <div class="rev-panel" id="panel-dashboard">
+      <div class="dash-kpi-row">
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-header">
+            <span class="dash-kpi-title">Facturas este mes</span>
+            <span class="dash-kpi-icon" style="background:var(--blue-bg);color:var(--blue);">🧾</span>
+          </div>
+          <div class="dash-kpi-value" id="dashKpiFacturas">—</div>
+          <div class="dash-kpi-delta" id="dashKpiFacturasDelta"></div>
+        </div>
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-header">
+            <span class="dash-kpi-title">Vendido este mes</span>
+            <span class="dash-kpi-icon" style="background:var(--green-bg);color:var(--green);">💵</span>
+          </div>
+          <div class="dash-kpi-value" id="dashKpiVendido">—</div>
+          <div class="dash-kpi-delta" id="dashKpiVendidoDelta"></div>
+        </div>
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-header">
+            <span class="dash-kpi-title">Cobrado este mes</span>
+            <span class="dash-kpi-icon" style="background:var(--amber-bg);color:var(--amber);">🏦</span>
+          </div>
+          <div class="dash-kpi-value" id="dashKpiCobrado">—</div>
+          <div class="dash-kpi-delta" id="dashKpiCobradoDelta"></div>
+        </div>
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-header">
+            <span class="dash-kpi-title">Clientes activos</span>
+            <span class="dash-kpi-icon" style="background:var(--orange-bg);color:var(--orange);">👥</span>
+          </div>
+          <div class="dash-kpi-value" id="dashKpiClientes">—</div>
+          <div class="dash-kpi-delta" id="dashKpiClientesDelta"></div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="chart-card dash-goal-card">
+          <div class="chart-title">Objetivo del mes</div>
+          <div class="dash-goal-body">
+            <svg id="dashGoalRing" viewBox="0 0 160 160" style="width:150px;height:150px;flex-shrink:0;"></svg>
+            <div class="dash-goal-info">
+              <div id="dashGoalTexto" class="dash-goal-texto"></div>
+              <div class="dash-goal-linea"><span>Completado</span><b id="dashGoalCompletado">—</b></div>
+              <div class="dash-goal-linea"><span>Pendiente de facturar</span><b id="dashGoalPendiente">—</b></div>
+              <div class="dash-goal-linea"><span>Objetivo</span><b id="dashGoalObjetivo">—</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card dash-bars-card">
+          <div class="chart-title">Vendido — últimos 6 meses</div>
+          <svg id="dashBarsChart" viewBox="0 0 400 200" style="width:100%;height:auto;"></svg>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:16px;">
+        <div class="chart-title">📦 Eficiencia de entrega</div>
+        <p id="dashEficienciaRango" style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:-4px 0 14px;"></p>
+        <div class="dash-eficiencia-body">
+          <div class="dash-eficiencia-pct" id="dashEficienciaPct">—</div>
+          <div class="dash-eficiencia-info">
+            <div class="dash-eficiencia-bar-track"><div class="dash-eficiencia-bar-fill" id="dashEficienciaBar"></div></div>
+            <div class="dash-goal-linea"><span>Pedidos cargados en la ventana</span><b id="dashEficienciaHabidos">—</b></div>
+            <div class="dash-goal-linea"><span>Ya facturados (de esos)</span><b id="dashEficienciaEntregados">—</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rev-panel" id="panel-objetivo" style="display:none;">
       <div class="chart-card" id="rev-objetivo">
         <div class="chart-title">📦 Gestión de ventas y pedidos — <span id="gestionMesLabel"></span></div>
         <div class="objetivo-row">
@@ -1620,18 +1871,7 @@
           </div>
         </div>
         <div class="stats" id="gestionStats"></div>
-
-        <div class="pedidos-pendientes-block">
-          <div class="chart-title" style="font-size:14px;margin-top:1.25rem;">Pedidos pendientes de facturar</div>
-          <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:-2px 0 10px;">Pedidos ya confirmados que todavía no se facturaron. Se suman a la proyección del mes; cuando factures uno, quitalo de acá.</p>
-          <div class="pedido-pendiente-form">
-            <input type="text" id="pp_cliente" placeholder="Cliente (opcional)">
-            <input type="number" id="pp_cantidad" placeholder="Cantidad (ítems)" min="0" step="1">
-            <input type="text" id="pp_nota" placeholder="Nota (opcional)">
-            <button class="ghost" id="btnAgregarPedidoPendiente">+ Agregar</button>
-          </div>
-          <div id="pedidosPendientesList"></div>
-        </div>
+        <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:14px 0 0;">Los pedidos que todavía no se facturaron se cargan y se gestionan en la pestaña <b>Pedidos</b>.</p>
       </div>
     </div>
 
@@ -2465,6 +2705,194 @@ function productosResumen(v) {
   return items.map(p => p.producto + (p.cantidad != null ? ` (${p.cantidad})` : '')).join(', ');
 }
 
+let itemsProductosFormPedido = [];
+let editandoPedidoId = null;
+let filtroPedidos = 'todos';
+let busquedaPedidos = '';
+
+function renderItemsProductosPedido() {
+  $('itemsProductosPedidoContainer').innerHTML = itemsProductosFormPedido.map((item, idx) => `
+    <div class="item-producto-row">
+      <input type="text" list="listaProductos" placeholder="Producto" value="${escapeHtml(item.producto || '')}" oninput="actualizarItemProductoPedido(${idx}, 'producto', this.value)">
+      <input type="number" placeholder="Cantidad" min="0" step="1" value="${item.cantidad != null ? item.cantidad : ''}" oninput="actualizarItemProductoPedido(${idx}, 'cantidad', this.value)">
+      ${itemsProductosFormPedido.length > 1 ? `<button type="button" class="item-producto-del" onclick="eliminarItemProductoPedido(${idx})" title="Quitar">✕</button>` : ''}
+    </div>`).join('');
+}
+
+function actualizarItemProductoPedido(idx, campo, valor) {
+  if (!itemsProductosFormPedido[idx]) return;
+  itemsProductosFormPedido[idx][campo] = valor;
+}
+
+function agregarItemProductoPedido() {
+  itemsProductosFormPedido.push({producto: '', cantidad: ''});
+  renderItemsProductosPedido();
+}
+
+function eliminarItemProductoPedido(idx) {
+  itemsProductosFormPedido.splice(idx, 1);
+  if (itemsProductosFormPedido.length === 0) itemsProductosFormPedido.push({producto: '', cantidad: ''});
+  renderItemsProductosPedido();
+}
+
+function itemsProductosDesdePedido(p) {
+  if (p.productos && p.productos.length) {
+    return p.productos.map(it => ({producto: it.producto || '', cantidad: it.cantidad != null ? it.cantidad : ''}));
+  }
+  return [{producto: '', cantidad: ''}];
+}
+
+function cantidadTotalPedido(p) {
+  return (p.productos || []).reduce((s,it) => s + (it.cantidad != null && !isNaN(it.cantidad) ? Number(it.cantidad) : 0), 0);
+}
+
+function abrirFormularioPedido() {
+  editandoPedidoId = null;
+  limpiarValidaciones();
+  $('pedidoFormTitulo').textContent = 'Cargar nuevo pedido';
+  $('ped_fecha').value = toISODate(new Date());
+  $('ped_cliente').value = '';
+  $('ped_notas').value = '';
+  itemsProductosFormPedido = [{producto: '', cantidad: ''}];
+  renderItemsProductosPedido();
+  $('pedidoPanel').classList.add('open');
+}
+
+function cerrarFormularioPedido() {
+  $('pedidoPanel').classList.remove('open');
+  editandoPedidoId = null;
+}
+
+function editarPedido(id) {
+  const p = pedidosPendientes.find(x => x.id === id);
+  if (!p) return;
+  limpiarValidaciones();
+  editandoPedidoId = id;
+  $('pedidoFormTitulo').textContent = 'Editar pedido';
+  $('ped_fecha').value = p.fecha;
+  $('ped_cliente').value = p.cliente || '';
+  $('ped_notas').value = p.notas || '';
+  itemsProductosFormPedido = itemsProductosDesdePedido(p);
+  renderItemsProductosPedido();
+  $('pedidoPanel').classList.add('open');
+  $('pedidoPanel').scrollIntoView({behavior:'smooth'});
+}
+
+async function guardarPedido() {
+  const cliente = $('ped_cliente').value.trim();
+  const fecha = $('ped_fecha').value;
+  if (!cliente || !fecha) {
+    mostrarAviso('Completá el cliente y la fecha del pedido.', 'error');
+    return;
+  }
+  const productosFinal = itemsProductosFormPedido
+    .map(it => ({
+      producto: (it.producto || '').trim(),
+      cantidad: it.cantidad === '' || it.cantidad == null ? null : parseFloat(it.cantidad)
+    }))
+    .filter(it => it.producto !== '');
+
+  if (productosFinal.length === 0) {
+    mostrarAviso('Cargá al menos un producto con su cantidad.', 'error');
+    return;
+  }
+
+  if (editandoPedidoId) {
+    const p = pedidosPendientes.find(x => x.id === editandoPedidoId);
+    Object.assign(p, {cliente, fecha, productos: productosFinal, notas: $('ped_notas').value.trim()});
+  } else {
+    pedidosPendientes.push({
+      id: 'ped_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      cliente, fecha,
+      productos: productosFinal,
+      notas: $('ped_notas').value.trim(),
+      facturado: false,
+      fecha_facturado: null
+    });
+  }
+
+  await guardarPedidosPendientesEnStorage();
+  cerrarFormularioPedido();
+  refreshTodasLasVistas();
+}
+
+async function eliminarPedido(id) {
+  const ok = await confirmarAccion('¿Eliminar este pedido? No se puede deshacer.');
+  if (!ok) return;
+  pedidosPendientes = pedidosPendientes.filter(x => x.id !== id);
+  await guardarPedidosPendientesEnStorage();
+  refreshTodasLasVistas();
+}
+
+function pedidoCardHTML(p) {
+  const cantidad = cantidadTotalPedido(p);
+  return `
+    <div class="pedido-card ${p.facturado ? 'facturado' : ''}">
+      <div class="pedido-card-header">
+        <div class="pedido-card-titulo">
+          <span class="cliente">${escapeHtml(p.cliente || 'Sin cliente')}</span>
+          <span class="badge ${p.facturado ? 'pagado' : 'porvencer'}">${p.facturado ? 'Facturado' : 'Pendiente de facturar'}</span>
+        </div>
+        <span class="pedido-card-cantidad">${cantidad} ítems</span>
+      </div>
+      <div class="producto">${escapeHtml(productosResumen(p))}</div>
+      <div class="row-dates">
+        <span>Pedido: ${formatFecha(p.fecha)}</span>
+        ${p.facturado ? `<span>Facturado: ${formatFecha(p.fecha_facturado)}</span>` : ''}
+      </div>
+      ${p.notas ? `<div class="nota">📝 ${escapeHtml(p.notas)}</div>` : ''}
+      <div class="row-actions" style="margin-top:8px;">
+        ${!p.facturado ? `<button class="iconbtn" onclick="marcarPedidoFacturado('${p.id}')">Marcar como facturado</button>` : ''}
+        <button class="iconbtn" onclick="editarPedido('${p.id}')">Editar</button>
+        <button class="iconbtn danger" onclick="eliminarPedido('${p.id}')">Eliminar</button>
+      </div>
+    </div>`;
+}
+
+function pedidosFiltrados() {
+  let lista = pedidosPendientes.filter(p => {
+    if (filtroPedidos === 'pendiente') return !p.facturado;
+    if (filtroPedidos === 'facturado') return !!p.facturado;
+    return true;
+  });
+  if (busquedaPedidos.trim()) {
+    const q = busquedaPedidos.trim().toLowerCase();
+    lista = lista.filter(p =>
+      (p.cliente || '').toLowerCase().includes(q) ||
+      (p.productos || []).some(it => (it.producto || '').toLowerCase().includes(q))
+    );
+  }
+  lista.sort((a,b) => parseFecha(b.fecha) - parseFecha(a.fecha));
+  return lista;
+}
+
+function renderPedidos() {
+  if (pedidosPendientes.length === 0) {
+    $('contenidoPedidos').innerHTML = `
+      <div class="empty">
+        <h3>Todavía no cargaste ningún pedido</h3>
+        <p>Cargá acá los pedidos confirmados antes de convertirlos en factura.</p>
+        <button class="primary" onclick="abrirFormularioPedido()">+ Nuevo pedido</button>
+      </div>`;
+    return;
+  }
+  const lista = pedidosFiltrados();
+  if (lista.length === 0) {
+    $('contenidoPedidos').innerHTML = `<div class="empty"><h3>No hay resultados</h3></div>`;
+    return;
+  }
+  $('contenidoPedidos').innerHTML = lista.map(pedidoCardHTML).join('');
+}
+
+async function marcarPedidoFacturado(id) {
+  const p = pedidosPendientes.find(x => x.id === id);
+  if (!p) return;
+  p.facturado = true;
+  p.fecha_facturado = toISODate(new Date());
+  await guardarPedidosPendientesEnStorage();
+  refreshTodasLasVistas();
+}
+
 function abrirFormulario() {
   editandoId = null;
   cerrarFormularioPago();
@@ -2593,6 +3021,7 @@ function refreshTodasLasVistas() {
   if ($('viewClientes').style.display !== 'none') renderClientes();
   if ($('viewProductos').style.display !== 'none') renderProductos();
   if ($('viewBitacoraVentas').style.display !== 'none') renderBitacoraVentas();
+  if ($('viewPedidos').style.display !== 'none') renderPedidos();
   renderHeaderResumen();
 }
 
@@ -2899,6 +3328,19 @@ $('filtros').addEventListener('click', (e) => {
   renderLedger();
 });
 
+$('btnNuevoPedido').addEventListener('click', abrirFormularioPedido);
+$('btnAgregarItemProductoPedido').addEventListener('click', agregarItemProductoPedido);
+$('btnCancelarPedido').addEventListener('click', cerrarFormularioPedido);
+$('btnGuardarPedido').addEventListener('click', guardarPedido);
+$('buscadorPedidos').addEventListener('input', (e) => { busquedaPedidos = e.target.value; renderPedidos(); });
+$('filtrosPedidos').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('chip')) return;
+  document.querySelectorAll('#filtrosPedidos .chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  filtroPedidos = e.target.dataset.filter;
+  renderPedidos();
+});
+
 let periodMode = 'mes';
 let rangoActual = null;
 let evolucionMeses = 6;
@@ -2999,6 +3441,7 @@ function renderRevision() {
   renderGestionVentas();
   renderVentaObjetivoRanking();
   renderTopProductos();
+  renderDashboard();
 }
 
 function renderChart(actual, previo) {
@@ -3118,12 +3561,14 @@ $('tabs').addEventListener('click', (e) => {
   $('viewClientes').style.display = tab === 'clientes' ? '' : 'none';
   $('viewProductos').style.display = tab === 'productos' ? '' : 'none';
   $('viewBitacoraVentas').style.display = tab === 'bitacoraventas' ? '' : 'none';
+  $('viewPedidos').style.display = tab === 'pedidos' ? '' : 'none';
   if (tab === 'revision') renderRevision();
   if (tab === 'calendario') renderCalendario();
   if (tab === 'deudores') renderDeudores();
   if (tab === 'clientes') renderClientes();
   if (tab === 'productos') renderProductos();
   if (tab === 'bitacoraventas') renderBitacoraVentas();
+  if (tab === 'pedidos') renderPedidos();
 });
 
 $('periodQuick').addEventListener('click', (e) => {
@@ -3152,7 +3597,6 @@ $('revSubnav').addEventListener('click', (e) => {
   const destino = $(e.target.dataset.target);
   if (destino) destino.style.display = '';
 });
-$('btnAgregarPedidoPendiente').addEventListener('click', agregarPedidoPendiente);
 
 $('btnAplicarRango').addEventListener('click', () => {
   const desdeVal = $('r_desde').value;
@@ -3804,6 +4248,7 @@ async function guardarObjetivoMensual() {
   } catch (e) { /* noop */ }
   mostrarAviso('Objetivo mensual actualizado.', null, true);
   renderGestionVentas();
+  renderDashboard();
 }
 
 let pedidosPendientes = [];
@@ -3815,6 +4260,20 @@ async function cargarPedidosPendientes() {
   } catch (e) {
     pedidosPendientes = [];
   }
+  migrarPedidosPendientes();
+}
+
+function migrarPedidosPendientes() {
+  pedidosPendientes.forEach(p => {
+    if (p.facturado === undefined) p.facturado = false;
+    if (p.fecha_facturado === undefined) p.fecha_facturado = null;
+    if (!p.productos) {
+      p.productos = p.cantidad != null ? [{producto: '', cantidad: p.cantidad}] : [];
+      p.notas = p.nota || '';
+      delete p.cantidad;
+      delete p.nota;
+    }
+  });
 }
 
 async function guardarPedidosPendientesEnStorage() {
@@ -3826,48 +4285,152 @@ async function guardarPedidosPendientesEnStorage() {
 }
 
 function totalItemsPedidosPendientes() {
-  return pedidosPendientes.reduce((s,p) => s + (p.cantidad != null && !isNaN(p.cantidad) ? Number(p.cantidad) : 0), 0);
+  return pedidosPendientes
+    .filter(p => !p.facturado)
+    .reduce((s,p) => s + cantidadTotalPedido(p), 0);
 }
 
-async function agregarPedidoPendiente() {
-  const cantidad = parseFloat($('pp_cantidad').value);
-  if (isNaN(cantidad) || cantidad <= 0) {
-    mostrarAviso('Ingresá una cantidad de ítems válida para el pedido.', 'error');
-    return;
+function calcularKPIsMensuales() {
+  const t = hoy();
+  const desdeActual = new Date(t.getFullYear(), t.getMonth(), 1);
+  const hastaActual = new Date(t.getFullYear(), t.getMonth() + 1, 0);
+  const desdeAnterior = new Date(t.getFullYear(), t.getMonth() - 1, 1);
+  const hastaAnterior = new Date(t.getFullYear(), t.getMonth(), 0);
+
+  const ventasActual = ventas.filter(v => enRango(v.fecha_venta, desdeActual, hastaActual));
+  const ventasAnterior = ventas.filter(v => enRango(v.fecha_venta, desdeAnterior, hastaAnterior));
+
+  const metricasActual = metricasPeriodo(desdeActual, hastaActual);
+  const metricasAnterior = metricasPeriodo(desdeAnterior, hastaAnterior);
+
+  const clientesActual = new Set(ventasActual.map(v => v.cliente)).size;
+  const clientesAnterior = new Set(ventasAnterior.map(v => v.cliente)).size;
+
+  return {
+    facturas: {actual: ventasActual.length, anterior: ventasAnterior.length},
+    vendido: {actual: metricasActual.vendido, anterior: metricasAnterior.vendido},
+    cobrado: {actual: metricasActual.cobrado, anterior: metricasAnterior.cobrado},
+    clientes: {actual: clientesActual, anterior: clientesAnterior}
+  };
+}
+
+function calcularDeltaKPI(actual, anterior) {
+  if (anterior === 0) {
+    if (actual === 0) return {texto: 'Sin cambios', clase: 'flat'};
+    return {texto: '▲ Nuevo este mes', clase: 'up'};
   }
-  pedidosPendientes.push({
-    id: 'pp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-    cliente: $('pp_cliente').value.trim(),
-    cantidad,
-    nota: $('pp_nota').value.trim(),
-    fecha: toISODate(new Date())
+  const pct = Math.round(((actual - anterior) / anterior) * 100);
+  if (pct === 0) return {texto: 'Igual que el mes pasado', clase: 'flat'};
+  const clase = pct > 0 ? 'up' : 'down';
+  const flecha = pct > 0 ? '▲' : '▼';
+  return {texto: `${flecha} ${Math.abs(pct)}% vs. mes pasado`, clase};
+}
+
+function aplicarKPI(idValor, idDelta, actual, anterior, esMonto) {
+  $(idValor).textContent = esMonto ? formatMonto(actual) : actual;
+  const d = calcularDeltaKPI(actual, anterior);
+  $(idDelta).textContent = d.texto;
+  $(idDelta).className = 'dash-kpi-delta ' + d.clase;
+}
+
+function renderDashboard() {
+  const kpis = calcularKPIsMensuales();
+  aplicarKPI('dashKpiFacturas', 'dashKpiFacturasDelta', kpis.facturas.actual, kpis.facturas.anterior, false);
+  aplicarKPI('dashKpiVendido', 'dashKpiVendidoDelta', kpis.vendido.actual, kpis.vendido.anterior, true);
+  aplicarKPI('dashKpiCobrado', 'dashKpiCobradoDelta', kpis.cobrado.actual, kpis.cobrado.anterior, true);
+  aplicarKPI('dashKpiClientes', 'dashKpiClientesDelta', kpis.clientes.actual, kpis.clientes.anterior, false);
+
+  renderDashGoalRing();
+  renderDashBarsChart();
+  renderDashEficiencia();
+}
+
+function renderDashGoalRing() {
+  const gestion = calcularGestionVentasMes();
+  const itemsPendientes = totalItemsPedidosPendientes();
+  const proyeccion = gestion.itemsVendidos + itemsPendientes;
+  const pct = objetivoMensual > 0 ? Math.min(100, Math.round((proyeccion / objetivoMensual) * 100)) : 0;
+
+  const r = 60, cx = 80, cy = 80;
+  const circunferencia = 2 * Math.PI * r;
+  const offset = circunferencia - (pct / 100) * circunferencia;
+  const color = pct >= 100 ? '#2F8557' : (pct >= 60 ? '#2B6E7E' : '#A8710A');
+
+  $('dashGoalRing').innerHTML = `
+    <circle cx="${cx}" cy="${cy}" r="${r}" stroke="#E7EAE9" stroke-width="14" fill="none"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" stroke="${color}" stroke-width="14" fill="none"
+      stroke-dasharray="${circunferencia}" stroke-dashoffset="${offset}" stroke-linecap="round"
+      transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dashoffset .4s ease;"/>
+    <text x="${cx}" y="${cy+9}" text-anchor="middle" font-family="Oswald, sans-serif" font-size="28" font-weight="700" fill="#1B2023">${objetivoMensual > 0 ? pct + '%' : '—'}</text>
+  `;
+
+  $('dashGoalTexto').textContent = objetivoMensual > 0
+    ? `${proyeccion} de ${objetivoMensual} ítems proyectados este mes`
+    : 'Cargá un objetivo mensual en la pestaña "Objetivo del mes" para ver el progreso acá.';
+  $('dashGoalCompletado').textContent = gestion.itemsVendidos + ' ítems';
+  $('dashGoalPendiente').textContent = itemsPendientes + ' ítems';
+  $('dashGoalObjetivo').textContent = objetivoMensual > 0 ? objetivoMensual + ' ítems' : 'sin cargar';
+}
+
+function renderDashBarsChart() {
+  const datos = calcularEvolucionMensual(6);
+  const max = Math.max(...datos.map(d => d.vendido), 1);
+  const chartW = 400, chartH = 200, baseY = 165, topPad = 15, leftPad = 10, rightPad = 10;
+  const usableW = chartW - leftPad - rightPad;
+  const barW = Math.min(48, usableW / datos.length - 14);
+  const paso = usableW / datos.length;
+
+  let svg = `<line x1="${leftPad}" y1="${baseY}" x2="${chartW-rightPad}" y2="${baseY}" stroke="#D3D8D7" stroke-width="1"/>`;
+  datos.forEach((d, i) => {
+    const h = (d.vendido / max) * (baseY - topPad - 20);
+    const x = leftPad + i * paso + (paso - barW) / 2;
+    const y = baseY - h;
+    const label = d.vendido >= 1000 ? new Intl.NumberFormat('es-AR',{notation:'compact',maximumFractionDigits:1}).format(d.vendido) : Math.round(d.vendido);
+    svg += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="4" fill="#2B6E7E"/>`;
+    svg += `<text x="${x + barW/2}" y="${y - 6}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#2B6E7E">${label}</text>`;
+    svg += `<text x="${x + barW/2}" y="${baseY + 18}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" fill="#5C6B6E">${d.label}</text>`;
   });
-  await guardarPedidosPendientesEnStorage();
-  $('pp_cliente').value = '';
-  $('pp_cantidad').value = '';
-  $('pp_nota').value = '';
-  renderGestionVentas();
+
+  $('dashBarsChart').innerHTML = svg;
 }
 
-async function eliminarPedidoPendiente(id) {
-  pedidosPendientes = pedidosPendientes.filter(p => p.id !== id);
-  await guardarPedidosPendientesEnStorage();
-  renderGestionVentas();
+function calcularEficienciaEntrega() {
+  const t = hoy();
+  const desde = new Date(t.getFullYear(), t.getMonth() - 1, 15);
+  const hasta = new Date(t.getFullYear(), t.getMonth(), 15);
+
+  const enVentana = pedidosPendientes.filter(p => enRango(p.fecha, desde, hasta));
+  const entregados = enVentana.filter(p => p.facturado);
+
+  const itemsHabidos = enVentana.reduce((s,p) => s + cantidadTotalPedido(p), 0);
+  const itemsEntregados = entregados.reduce((s,p) => s + cantidadTotalPedido(p), 0);
+  const pct = itemsHabidos > 0 ? Math.round((itemsEntregados / itemsHabidos) * 100) : null;
+
+  return {
+    desde, hasta, pct,
+    itemsHabidos, itemsEntregados,
+    cantidadPedidos: enVentana.length,
+    cantidadEntregados: entregados.length
+  };
 }
 
-function renderPedidosPendientesList() {
-  if (pedidosPendientes.length === 0) {
-    $('pedidosPendientesList').innerHTML = `<div class="pedidos-pendientes-vacio">No hay pedidos pendientes de facturar cargados.</div>`;
+function renderDashEficiencia() {
+  const e = calcularEficienciaEntrega();
+  $('dashEficienciaRango').textContent = `Del ${formatFechaObj(e.desde)} al ${formatFechaObj(e.hasta)} (pedidos cargados en esos 30 días, comparados contra cuántos ya se facturaron a hoy)`;
+
+  if (e.cantidadPedidos === 0) {
+    $('dashEficienciaPct').textContent = '—';
+    $('dashEficienciaBar').style.width = '0%';
+    $('dashEficienciaHabidos').textContent = 'sin pedidos cargados en esta ventana';
+    $('dashEficienciaEntregados').textContent = '—';
     return;
   }
-  $('pedidosPendientesList').innerHTML = pedidosPendientes.map(p => `
-    <div class="pedido-pendiente-item">
-      <span class="pedido-pendiente-info">
-        <b>${p.cantidad}</b> ítems${p.cliente ? ' — ' + escapeHtml(p.cliente) : ''}${p.nota ? ' · ' + escapeHtml(p.nota) : ''}
-        <span style="opacity:.7;"> (cargado ${formatFecha(p.fecha)})</span>
-      </span>
-      <button class="pedido-pendiente-del" onclick="eliminarPedidoPendiente('${p.id}')">Ya facturado — quitar ✕</button>
-    </div>`).join('');
+
+  $('dashEficienciaPct').textContent = e.pct + '%';
+  $('dashEficienciaBar').style.width = e.pct + '%';
+  $('dashEficienciaBar').style.background = e.pct >= 80 ? 'var(--green)' : (e.pct >= 40 ? 'var(--blue)' : 'var(--orange)');
+  $('dashEficienciaHabidos').textContent = `${e.cantidadPedidos} pedido${e.cantidadPedidos===1?'':'s'} (${e.itemsHabidos} ítems)`;
+  $('dashEficienciaEntregados').textContent = `${e.cantidadEntregados} pedido${e.cantidadEntregados===1?'':'s'} (${e.itemsEntregados} ítems)`;
 }
 
 function calcularGestionVentasMes() {
@@ -3926,8 +4489,6 @@ function renderGestionVentas() {
       <div class="sub" style="margin-top:2px;">${itemsVendidos} facturados + ${itemsPendientes} pendientes</div>
     </div>
   `;
-
-  renderPedidosPendientesList();
 }
 
 function historicoCantidadPorCliente() {
@@ -4602,6 +5163,8 @@ $('buscadorProductos').addEventListener('input', renderProductos);
 marcarCampoRequerido('p_cliente_select');
 marcarCampoRequerido('c_nombre');
 marcarCampoRequerido('pr_nombre');
+marcarCampoRequerido('ped_cliente');
+marcarCampoRequerido('ped_fecha');
 
 function activarSincronizacionEnVivo() {
   if (!window.storage || typeof window.storage.watch !== 'function') return;
@@ -4641,7 +5204,11 @@ function activarSincronizacionEnVivo() {
 
   window.storage.watch('pedidos_pendientes', (value) => {
     if (value == null) return;
-    try { pedidosPendientes = JSON.parse(value); refreshTodasLasVistas(); } catch (e) { /* noop */ }
+    try {
+      pedidosPendientes = JSON.parse(value);
+      migrarPedidosPendientes();
+      refreshTodasLasVistas();
+    } catch (e) { /* noop */ }
   });
 
   window.storage.watch('objetivo_mensual_items', (value) => {
