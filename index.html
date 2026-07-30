@@ -1852,7 +1852,7 @@
           <div class="dash-eficiencia-info">
             <div class="dash-eficiencia-bar-track"><div class="dash-eficiencia-bar-fill" id="dashEficienciaBar"></div></div>
             <div class="dash-goal-linea"><span>Pedidos cargados en la ventana</span><b id="dashEficienciaHabidos">—</b></div>
-            <div class="dash-goal-linea"><span>Ya facturados (de esos)</span><b id="dashEficienciaEntregados">—</b></div>
+            <div class="dash-goal-linea"><span>Facturado en el mes</span><b id="dashEficienciaEntregados">—</b></div>
           </div>
         </div>
       </div>
@@ -4396,27 +4396,30 @@ function renderDashBarsChart() {
 
 function calcularEficienciaEntrega() {
   const t = hoy();
-  const desde = new Date(t.getFullYear(), t.getMonth() - 1, 15);
-  const hasta = new Date(t.getFullYear(), t.getMonth(), 15);
+  const desdePedidos = new Date(t.getFullYear(), t.getMonth() - 1, 15);
+  const hastaPedidos = new Date(t.getFullYear(), t.getMonth(), 15);
+  const desdeFacturas = new Date(t.getFullYear(), t.getMonth(), 1);
+  const hastaFacturas = new Date(t.getFullYear(), t.getMonth() + 1, 0);
 
-  const enVentana = pedidosPendientes.filter(p => enRango(p.fecha, desde, hasta));
-  const entregados = enVentana.filter(p => p.facturado);
+  const pedidosEnVentana = pedidosPendientes.filter(p => enRango(p.fecha, desdePedidos, hastaPedidos));
+  const itemsHabidos = pedidosEnVentana.reduce((s,p) => s + cantidadTotalPedido(p), 0);
 
-  const itemsHabidos = enVentana.reduce((s,p) => s + cantidadTotalPedido(p), 0);
-  const itemsEntregados = entregados.reduce((s,p) => s + cantidadTotalPedido(p), 0);
-  const pct = itemsHabidos > 0 ? Math.round((itemsEntregados / itemsHabidos) * 100) : null;
+  const ventasDelMes = ventas.filter(v => enRango(v.fecha_venta, desdeFacturas, hastaFacturas));
+  const itemsFacturados = ventasDelMes.reduce((s,v) => s + (v.productos || []).reduce((s2,p) => s2 + (p.cantidad != null && !isNaN(p.cantidad) ? Number(p.cantidad) : 0), 0), 0);
+
+  const pct = itemsHabidos > 0 ? Math.round((itemsFacturados / itemsHabidos) * 100) : null;
 
   return {
-    desde, hasta, pct,
-    itemsHabidos, itemsEntregados,
-    cantidadPedidos: enVentana.length,
-    cantidadEntregados: entregados.length
+    desdePedidos, hastaPedidos, desdeFacturas, hastaFacturas, pct,
+    itemsHabidos, itemsFacturados,
+    cantidadPedidos: pedidosEnVentana.length,
+    cantidadFacturas: ventasDelMes.length
   };
 }
 
 function renderDashEficiencia() {
   const e = calcularEficienciaEntrega();
-  $('dashEficienciaRango').textContent = `Del ${formatFechaObj(e.desde)} al ${formatFechaObj(e.hasta)} (pedidos cargados en esos 30 días, comparados contra cuántos ya se facturaron a hoy)`;
+  $('dashEficienciaRango').textContent = `Pedidos del ${formatFechaObj(e.desdePedidos)} al ${formatFechaObj(e.hastaPedidos)}, comparados contra lo facturado del ${formatFechaObj(e.desdeFacturas)} al ${formatFechaObj(e.hastaFacturas)}.`;
 
   if (e.cantidadPedidos === 0) {
     $('dashEficienciaPct').textContent = '—';
@@ -4427,10 +4430,10 @@ function renderDashEficiencia() {
   }
 
   $('dashEficienciaPct').textContent = e.pct + '%';
-  $('dashEficienciaBar').style.width = e.pct + '%';
+  $('dashEficienciaBar').style.width = Math.min(e.pct, 100) + '%';
   $('dashEficienciaBar').style.background = e.pct >= 80 ? 'var(--green)' : (e.pct >= 40 ? 'var(--blue)' : 'var(--orange)');
   $('dashEficienciaHabidos').textContent = `${e.cantidadPedidos} pedido${e.cantidadPedidos===1?'':'s'} (${e.itemsHabidos} ítems)`;
-  $('dashEficienciaEntregados').textContent = `${e.cantidadEntregados} pedido${e.cantidadEntregados===1?'':'s'} (${e.itemsEntregados} ítems)`;
+  $('dashEficienciaEntregados').textContent = `${e.cantidadFacturas} factura${e.cantidadFacturas===1?'':'s'} (${e.itemsFacturados} ítems)`;
 }
 
 function calcularGestionVentasMes() {
