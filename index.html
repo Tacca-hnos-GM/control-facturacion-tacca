@@ -1646,6 +1646,10 @@
         <input type="number" id="f_monto" placeholder="0" min="0" step="0.01">
       </div>
       <datalist id="listaProductos"></datalist>
+      <div id="ventaPedidosField" class="field full" style="display:none;">
+        <label>Pedidos de este cliente (opcional — marcá los que cubre esta factura)</label>
+        <div id="ventaPedidosChecklist"></div>
+      </div>
       <div class="form-section-label">Productos</div>
       <div class="field full">
         <div id="itemsProductosContainer"></div>
@@ -2697,12 +2701,14 @@ function aplicarModalidadPagoClientePedido() {
 }
 
 let itemsProductosForm = [];
+let pedidosVinculadosVentaForm = new Set();
 
 function renderItemsProductos() {
   $('itemsProductosContainer').innerHTML = itemsProductosForm.map((item, idx) => `
     <div class="item-producto-row">
       <input type="text" list="listaProductos" placeholder="Producto" value="${escapeHtml(item.producto || '')}" oninput="actualizarItemProducto(${idx}, 'producto', this.value)">
       <input type="number" placeholder="Cantidad" min="0" step="1" value="${item.cantidad != null ? item.cantidad : ''}" oninput="actualizarItemProducto(${idx}, 'cantidad', this.value)">
+      ${item.origenPedidoId ? `<span class="badge normal" style="font-size:10px;" title="Viene de un pedido vinculado">de pedido</span>` : ''}
       ${itemsProductosForm.length > 1 ? `<button type="button" class="item-producto-del" onclick="eliminarItemProducto(${idx})" title="Quitar">✕</button>` : ''}
     </div>`).join('');
 }
@@ -2713,13 +2719,21 @@ function actualizarItemProducto(idx, campo, valor) {
 }
 
 function agregarItemProducto() {
-  itemsProductosForm.push({producto: '', cantidad: ''});
+  itemsProductosForm.push({producto: '', cantidad: '', origenPedidoId: null, origenPedidoIdx: null});
   renderItemsProductos();
 }
 
 function eliminarItemProducto(idx) {
+  const removida = itemsProductosForm[idx];
   itemsProductosForm.splice(idx, 1);
   if (itemsProductosForm.length === 0) itemsProductosForm.push({producto: '', cantidad: ''});
+  if (removida && removida.origenPedidoId) {
+    const quedanOtras = itemsProductosForm.some(it => it.origenPedidoId === removida.origenPedidoId);
+    if (!quedanOtras) {
+      pedidosVinculadosVentaForm.delete(removida.origenPedidoId);
+      renderPedidosChecklistVenta();
+    }
+  }
   renderItemsProductos();
 }
 
@@ -2734,6 +2748,82 @@ function productosResumen(v) {
   const items = v.productos || [];
   if (items.length === 0) return '—';
   return items.map(p => p.producto + (p.cantidad != null ? ` (${p.cantidad})` : '')).join(', ');
+}
+
+function renderPedidosChecklistVenta() {
+  const nombre = $('f_cliente').value.trim();
+  if (!nombre) {
+    $('ventaPedidosField').style.display = 'none';
+    $('ventaPedidosChecklist').innerHTML = '';
+    return;
+  }
+  const pedidosCliente = pedidosPendientes.filter(p => !p.facturado && p.cliente.trim().toLowerCase() === nombre.toLowerCase());
+  if (pedidosCliente.length === 0) {
+    $('ventaPedidosField').style.display = 'none';
+    $('ventaPedidosChecklist').innerHTML = '';
+    return;
+  }
+  $('ventaPedidosField').style.display = '';
+  $('ventaPedidosChecklist').innerHTML = `<div class="facturas-checklist">${pedidosCliente.map(p => `
+    <label class="factura-check-row">
+      <input type="checkbox" ${pedidosVinculadosVentaForm.has(p.id) ? 'checked' : ''} onchange="toggleVentaPedidoLink('${p.id}', this.checked)">
+      <span>${p.numero ? 'N° ' + escapeHtml(p.numero) + ' — ' : ''}${formatFecha(p.fecha)} — ${escapeHtml(productosResumen(p))} (${cantidadTotalPedido(p)} ítems)</span>
+    </label>`).join('')}</div>`;
+}
+
+function toggleVentaPedidoLink(pedidoId, checked) {
+  if (checked) {
+    pedidosVinculadosVentaForm.add(pedidoId);
+    const pedido = pedidosPendientes.find(p => p.id === pedidoId);
+    if (pedido) {
+      if (itemsProductosForm.length === 1 && !itemsProductosForm[0].producto && !itemsProductosForm[0].cantidad) {
+        itemsProductosForm = [];
+      }
+      pedido.productos.forEach((it, idx) => {
+        itemsProductosForm.push({
+          producto: it.producto || '',
+          cantidad: it.cantidad != null ? it.cantidad : '',
+          origenPedidoId: pedidoId,
+          origenPedidoIdx: idx
+        });
+      });
+    }
+  } else {
+    pedidosVinculadosVentaForm.delete(pedidoId);
+    itemsProductosForm = itemsProductosForm.filter(it => it.origenPedidoId !== pedidoId);
+    if (itemsProductosForm.length === 0) itemsProductosForm.push({producto: '', cantidad: ''});
+  }
+  renderItemsProductos();
+}
+
+async function reconciliarPedidosVinculados() {
+  const pedidosAfectados = new Set(itemsProductosForm.filter(it => it.origenPedidoId).map(it => it.origenPedidoId));
+  if (pedidosAfectados.size === 0) return;
+
+  pedidosAfectados.forEach(pedidoId => {
+    const pedido = pedidosPendientes.find(p => p.id === pedidoId);
+    if (!pedido) return;
+    const nuevosProductos = [];
+    pedido.productos.forEach((itemPedido, idx) => {
+      const filasVenta = itemsProductosForm.filter(it => it.origenPedidoId === pedidoId && it.origenPedidoIdx === idx);
+      const facturado = filasVenta.reduce((s, it) => {
+        const c = it.cantidad === '' || it.cantidad == null ? 0 : parseFloat(it.cantidad);
+        return s + (isNaN(c) ? 0 : c);
+      }, 0);
+      const pedida = itemPedido.cantidad || 0;
+      const restante = Math.max(0, Math.round((pedida - facturado) * 100) / 100);
+      if (restante > 0) {
+        nuevosProductos.push({producto: itemPedido.producto, cantidad: restante});
+      }
+    });
+    if (nuevosProductos.length === 0) {
+      pedidosPendientes = pedidosPendientes.filter(p => p.id !== pedidoId);
+    } else {
+      pedido.productos = nuevosProductos;
+    }
+  });
+
+  await guardarPedidosPendientesEnStorage();
 }
 
 let itemsProductosFormPedido = [];
@@ -2946,6 +3036,9 @@ function abrirFormulario() {
   $('f_cliente').value = '';
   $('f_factura').value = '';
   $('f_monto').value = '';
+  pedidosVinculadosVentaForm = new Set();
+  $('ventaPedidosField').style.display = 'none';
+  $('ventaPedidosChecklist').innerHTML = '';
   itemsProductosForm = [{producto: '', cantidad: ''}];
   renderItemsProductos();
   $('f_condicion').value = 'Contado';
@@ -2971,6 +3064,9 @@ function editarVenta(id) {
   $('f_cliente').value = v.cliente;
   $('f_factura').value = v.factura;
   $('f_monto').value = v.monto;
+  pedidosVinculadosVentaForm = new Set();
+  $('ventaPedidosField').style.display = 'none';
+  $('ventaPedidosChecklist').innerHTML = '';
   itemsProductosForm = itemsProductosDesdeVenta(v);
   renderItemsProductos();
   $('f_condicion').value = v.condicion;
@@ -3000,6 +3096,8 @@ async function guardarVenta() {
     }))
     .filter(it => it.producto !== '');
 
+  const esNueva = !editandoId;
+
   if (editandoId) {
     const v = ventas.find(x => x.id === editandoId);
     Object.assign(v, {
@@ -3022,11 +3120,13 @@ async function guardarVenta() {
       estado: 'pendiente',
       fecha_pago: null,
       pagos: [],
-      gestiones: []
+      gestiones: [],
+      pedidos_vinculados: Array.from(pedidosVinculadosVentaForm)
     });
   }
 
   await guardarEnStorage();
+  if (esNueva) await reconciliarPedidosVinculados();
   actualizarDatalistProductos();
   cerrarFormulario();
   refreshTodasLasVistas();
@@ -3074,9 +3174,7 @@ function renderHeaderResumen() {
   const vencenHoy = ventas.filter(v => v.estado !== 'pagado' && v.fecha_vencimiento === hoyStr).length;
 
   const gestion = calcularGestionVentasMes();
-  const itemsPendientes = totalItemsPedidosPendientes();
-  const proyeccion = gestion.itemsVendidos + itemsPendientes;
-  const pctObjetivo = objetivoMensual > 0 ? Math.round((proyeccion / objetivoMensual) * 100) : null;
+  const pctObjetivo = objetivoMensual > 0 ? Math.round((gestion.itemsVendidos / objetivoMensual) * 100) : null;
 
   const partes = [];
   partes.push(vencenHoy > 0
@@ -3352,6 +3450,7 @@ $('btnGuardarPago').addEventListener('click', guardarPago);
 $('p_cliente_select').addEventListener('input', renderFacturasClientePago);
 $('btnAgregarPagoItem').addEventListener('click', agregarPagoItem);
 $('f_cliente').addEventListener('input', aplicarModalidadPagoCliente);
+$('f_cliente').addEventListener('input', renderPedidosChecklistVenta);
 $('ped_cliente').addEventListener('input', aplicarModalidadPagoClientePedido);
 $('btnCancelar').addEventListener('click', cerrarFormulario);
 $('btnGuardar').addEventListener('click', guardarVenta);
