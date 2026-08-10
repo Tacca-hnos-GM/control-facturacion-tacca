@@ -418,6 +418,52 @@
   .rev-panel{animation:rev-panel-in .15s ease-out;}
   @keyframes rev-panel-in{from{opacity:0;}to{opacity:1;}}
 
+  .dash-insights-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:16px;
+  }
+  @media (max-width:700px){
+    .dash-insights-row{grid-template-columns:1fr;}
+  }
+  .dash-insights-card{
+    border-radius:14px;
+    padding:16px 18px;
+  }
+  .dash-insights-card.atencion{background:var(--orange-bg);border:1px solid rgba(199,67,30,.25);}
+  .dash-insights-card.destacados{background:var(--green-bg);border:1px solid rgba(47,133,87,.25);}
+  .dash-insights-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:14.5px;
+    margin-bottom:10px;
+  }
+  .dash-insights-card.atencion .dash-insights-title{color:var(--orange-text);}
+  .dash-insights-card.destacados .dash-insights-title{color:var(--green-text);}
+  .dash-insights-list{
+    list-style:none;
+    padding:0;
+    margin:0;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+  }
+  .dash-insights-list li{
+    font-family:var(--font-body);
+    font-size:13px;
+    line-height:1.4;
+    padding-left:14px;
+    position:relative;
+  }
+  .dash-insights-list li::before{
+    content:'•';
+    position:absolute;
+    left:0;
+  }
+  .dash-insights-card.atencion .dash-insights-list li{color:var(--orange-text);}
+  .dash-insights-card.destacados .dash-insights-list li{color:var(--green-text);}
+  .dash-insights-vacio{font-style:italic;opacity:.75;}
   .dash-kpi-row{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
@@ -1814,6 +1860,17 @@
     </div>
 
     <div class="rev-panel" id="panel-dashboard">
+      <div class="dash-insights-row">
+        <div class="dash-insights-card atencion">
+          <div class="dash-insights-title">⚠️ Requieren atención</div>
+          <ul id="dashInsightsAtencion" class="dash-insights-list"></ul>
+        </div>
+        <div class="dash-insights-card destacados">
+          <div class="dash-insights-title">✅ Resultados destacados</div>
+          <ul id="dashInsightsDestacados" class="dash-insights-list"></ul>
+        </div>
+      </div>
+
       <div class="dash-kpi-row">
         <div class="dash-kpi-card">
           <div class="dash-kpi-header">
@@ -4480,6 +4537,94 @@ function aplicarKPI(idValor, idDelta, actual, anterior, esMonto) {
   $(idDelta).className = 'dash-kpi-delta ' + d.clase;
 }
 
+function calcularInsightsDashboard() {
+  const atencion = [];
+  const destacados = [];
+  const t = hoy();
+  const ef = calcularEficienciaEntrega();
+
+  const vencidasGraves = ventas.filter(v => v.estado !== 'pagado' && diasHasta(v.fecha_vencimiento) < -15);
+  if (vencidasGraves.length > 0) {
+    const total = vencidasGraves.reduce((s,v) => s + saldoPendiente(v), 0);
+    atencion.push(`${vencidasGraves.length} factura${vencidasGraves.length===1?'':'s'} vencida${vencidasGraves.length===1?'':'s'} hace más de 15 días, por ${formatMonto(total)}`);
+  }
+
+  const mapMorosidad = calcularMorosidad();
+  const reincidentesProximos = ventas.filter(v => {
+    if (v.estado === 'pagado') return false;
+    const d = diasHasta(v.fecha_vencimiento);
+    if (d < 0 || d > 3) return false;
+    return esClienteMoroso(v.cliente, mapMorosidad);
+  });
+  if (reincidentesProximos.length > 0) {
+    const clientesUnicos = [...new Set(reincidentesProximos.map(v => v.cliente))];
+    atencion.push(clientesUnicos.length === 1
+      ? `${clientesUnicos[0]} (reincidente) tiene una factura que vence en los próximos días`
+      : `${clientesUnicos.length} clientes reincidentes tienen facturas que vencen en los próximos 3 días`);
+  }
+
+  if (ef.cantidadPedidos > 0 && ef.pct != null && ef.pct < 40) {
+    atencion.push(`Eficiencia de entrega en ${ef.pct}% — por debajo del 40%`);
+  }
+
+  if (objetivoMensual > 0) {
+    const gestion = calcularGestionVentasMes();
+    const diaDelMes = t.getDate();
+    const diasEnMes = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+    const pctMesTranscurrido = diaDelMes / diasEnMes;
+    const pctObjetivoLogrado = gestion.itemsVendidos / objetivoMensual;
+    if (pctMesTranscurrido > 0.5 && pctObjetivoLogrado < pctMesTranscurrido - 0.15) {
+      atencion.push(`Vas atrasado respecto al objetivo: ${Math.round(pctObjetivoLogrado*100)}% logrado con ${Math.round(pctMesTranscurrido*100)}% del mes transcurrido`);
+    }
+  }
+
+  const evolucion = calcularEvolucionMensual(12);
+  const mesActual = evolucion[evolucion.length - 1];
+  const mesesAnteriores = evolucion.slice(0, -1);
+  if (mesesAnteriores.length > 0) {
+    const maxVendidoAnterior = Math.max(...mesesAnteriores.map(m => m.vendido));
+    if (mesActual.vendido > 0 && mesActual.vendido > maxVendidoAnterior) {
+      destacados.push(`Récord de facturación mensual: ${formatMonto(mesActual.vendido)}`);
+    }
+    const maxCobradoAnterior = Math.max(...mesesAnteriores.map(m => m.cobrado));
+    if (mesActual.cobrado > 0 && mesActual.cobrado > maxCobradoAnterior) {
+      destacados.push(`Récord de cobranza mensual: ${formatMonto(mesActual.cobrado)}`);
+    }
+  }
+
+  if (objetivoMensual > 0) {
+    const gestion = calcularGestionVentasMes();
+    if (gestion.itemsVendidos >= objetivoMensual) {
+      destacados.push(`Objetivo mensual cumplido: ${gestion.itemsVendidos} de ${objetivoMensual} ítems`);
+    }
+  }
+
+  if (ef.cantidadPedidos > 0 && ef.pct != null && ef.pct >= 80) {
+    destacados.push(`Eficiencia de entrega en ${ef.pct}% — muy bien encaminado`);
+  }
+
+  const mapProductos = historicoPorProducto();
+  const productosConCantidad = Object.entries(mapProductos).filter(([_, m]) => m.tieneCantidad);
+  if (productosConCantidad.length > 0) {
+    const [nombreTop, statsTop] = productosConCantidad.sort((a,b) => b[1].cantidadTotal - a[1].cantidadTotal)[0];
+    destacados.push(`Tu producto más vendido históricamente es "${nombreTop}" (${statsTop.cantidadTotal} unidades)`);
+  }
+
+  return {atencion, destacados};
+}
+
+function renderDashInsights() {
+  const {atencion, destacados} = calcularInsightsDashboard();
+
+  $('dashInsightsAtencion').innerHTML = atencion.length
+    ? atencion.map(txt => `<li>${escapeHtml(txt)}</li>`).join('')
+    : `<li class="dash-insights-vacio">Sin alertas por el momento 🎉</li>`;
+
+  $('dashInsightsDestacados').innerHTML = destacados.length
+    ? destacados.map(txt => `<li>${escapeHtml(txt)}</li>`).join('')
+    : `<li class="dash-insights-vacio">Todavía no hay datos suficientes para destacar algo este mes.</li>`;
+}
+
 function renderDashboard() {
   const kpis = calcularKPIsMensuales();
   aplicarKPI('dashKpiFacturas', 'dashKpiFacturasDelta', kpis.facturas.actual, kpis.facturas.anterior, false);
@@ -4487,6 +4632,7 @@ function renderDashboard() {
   aplicarKPI('dashKpiCobrado', 'dashKpiCobradoDelta', kpis.cobrado.actual, kpis.cobrado.anterior, true);
   aplicarKPI('dashKpiClientes', 'dashKpiClientesDelta', kpis.clientes.actual, kpis.clientes.anterior, false);
 
+  renderDashInsights();
   renderDashGoalRing();
   renderDashBarsChart();
   renderDashEficiencia();
