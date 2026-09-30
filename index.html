@@ -821,6 +821,147 @@
     font-weight:700;
     font-size:15px;
   }
+
+  /* ===== Flujo de Caja — panel tipo dashboard ===== */
+  .fc-dash{
+    background:linear-gradient(180deg, #E7EFF9 0%, #EEF3F8 220px, var(--steel-bg) 420px);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:20px;
+  }
+  .fc-dash-header{
+    background:linear-gradient(120deg, var(--graphite) 0%, var(--graphite-2) 100%);
+    border-radius:12px;
+    padding:16px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:16px;
+    color:#fff;
+  }
+  .fc-dash-header-title{display:flex;align-items:center;gap:12px;}
+  .fc-dash-header-icon{
+    width:38px;height:38px;border-radius:10px;
+    background:rgba(255,255,255,.16);
+    display:flex;align-items:center;justify-content:center;
+    font-size:19px;flex-shrink:0;
+  }
+  .fc-dash-header-title h2{
+    font-family:var(--font-display);font-size:18px;font-weight:600;margin:0;color:#fff;
+  }
+  .fc-dash-header-sub{font-family:var(--font-body);font-size:12px;color:rgba(255,255,255,.75);}
+  .fc-dash-header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .fc-dash-header-actions .chip-group{background:rgba(255,255,255,.14);border-radius:8px;padding:3px;}
+  .fc-dash-header-actions .chip{
+    color:rgba(255,255,255,.85);border-color:transparent;background:transparent;
+  }
+  .fc-dash-header-actions .chip.active{background:#fff;color:var(--graphite);font-weight:600;}
+
+  .fc-kpi-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .fc-kpi-card{
+    background:var(--card);
+    border-radius:12px;
+    padding:14px 16px;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    box-shadow:0 1px 2px rgba(3,74,166,.06);
+  }
+  .fc-kpi-icon{
+    width:36px;height:36px;border-radius:9px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+    background:var(--blue-bg);color:var(--blue-text);
+  }
+  .fc-kpi-icon.orange{background:var(--orange-bg);color:var(--orange-text);}
+  .fc-kpi-icon.green{background:var(--green-bg);color:var(--green-text);}
+  .fc-kpi-icon.amber{background:var(--amber-bg);color:var(--amber-text);}
+  .fc-kpi-body{min-width:0;}
+  .fc-kpi-label{font-family:var(--font-body);font-size:11.5px;color:var(--text-muted);margin-bottom:2px;}
+  .fc-kpi-value{font-family:var(--font-display);font-size:19px;font-weight:600;color:var(--text);line-height:1.15;}
+  .fc-kpi-sub{font-family:var(--font-body);font-size:11px;color:var(--text-muted);margin-top:3px;}
+  .fc-kpi-badge{
+    display:inline-block;font-family:var(--font-mono);font-size:10.5px;font-weight:700;
+    padding:2px 7px;border-radius:20px;margin-top:4px;
+  }
+  .fc-kpi-badge.green{background:var(--green-bg);color:var(--green-text);}
+  .fc-kpi-badge.orange{background:var(--orange-bg);color:var(--orange-text);}
+  .fc-kpi-badge.amber{background:var(--amber-bg);color:var(--amber-text);}
+
+  .fc-alert{
+    background:var(--card);
+    border-left:5px solid var(--green);
+    border-radius:10px;
+    padding:12px 16px;
+    margin-bottom:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .fc-alert.riesgo{border-left-color:var(--orange);}
+  .fc-alert-label{font-family:var(--font-display);font-size:14px;font-weight:600;}
+  .fc-alert-value{font-family:var(--font-mono);font-size:15px;font-weight:700;}
+  .fc-alert-sub{font-family:var(--font-body);font-size:11.5px;color:var(--text-muted);}
+
+  .fc-grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px;}
+  .fc-grid-3{display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;margin-bottom:14px;}
+  .fc-card{
+    background:var(--card);
+    border-radius:12px;
+    padding:16px;
+    box-shadow:0 1px 2px rgba(3,74,166,.06);
+  }
+  .fc-card-header{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;
+  }
+  .fc-card-header h3{
+    font-family:var(--font-display);font-size:14px;font-weight:600;margin:0;color:var(--text);
+  }
+  .fc-card-badge{
+    font-family:var(--font-body);font-size:10.5px;font-weight:600;color:var(--text-muted);
+    background:var(--steel-bg);padding:2px 8px;border-radius:20px;
+  }
+  .fc-chart-scroll{overflow-x:auto;}
+  .fc-config-toggle{
+    background:rgba(255,255,255,.16);border:none;color:#fff;
+    width:34px;height:34px;border-radius:8px;font-size:15px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .fc-config-toggle:hover{background:rgba(255,255,255,.26);}
+
+  .fc-mini-list{display:flex;flex-direction:column;gap:8px;}
+  .fc-mini-row{
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:8px 10px;background:var(--steel-bg);border-radius:8px;
+  }
+  .fc-mini-row-left{display:flex;flex-direction:column;min-width:0;}
+  .fc-mini-row-concepto{font-family:var(--font-body);font-size:12.5px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .fc-mini-row-fecha{font-family:var(--font-body);font-size:11px;color:var(--text-muted);}
+  .fc-mini-row-monto{font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;}
+
+  .fc-aging-bars{display:flex;flex-direction:column;gap:10px;}
+  .fc-aging-bar-row{display:flex;flex-direction:column;gap:3px;}
+  .fc-aging-bar-label{
+    display:flex;justify-content:space-between;font-family:var(--font-body);font-size:11.5px;color:var(--text-muted);
+  }
+  .fc-aging-bar-track{background:var(--steel-bg);border-radius:6px;height:10px;overflow:hidden;}
+  .fc-aging-bar-fill{height:100%;border-radius:6px;background:var(--blue);}
+  .fc-aging-bar-fill.orange{background:var(--orange);}
+  .fc-aging-empty{font-family:var(--font-body);font-size:12px;color:var(--text-muted);}
+
+  @media (max-width:900px){
+    .fc-grid-2{grid-template-columns:1fr;}
+    .fc-grid-3{grid-template-columns:1fr;}
+  }
+
   .row-main{min-width:0;}
   .row-top{
     display:flex;
@@ -1830,129 +1971,150 @@
   </div>
 
   <div id="viewFlujoCaja" style="display:none;">
-    <div class="formpanel open" style="margin-bottom:16px;">
-      <h2>Saldo inicial y nómina</h2>
-      <div class="formgrid">
-        <div class="field">
-          <label>Saldo actual en caja (ARS)</label>
-          <input type="number" id="fc_saldo_ars" placeholder="0" step="0.01">
+    <div class="fc-dash">
+      <div class="fc-dash-header">
+        <div class="fc-dash-header-title">
+          <span class="fc-dash-header-icon">💰</span>
+          <div>
+            <h2>Flujo de Caja</h2>
+            <span class="fc-dash-header-sub">Posición actual y proyección de saldo</span>
+          </div>
         </div>
-        <div class="field">
-          <label>Saldo actual en caja (USD)</label>
-          <input type="number" id="fc_saldo_usd" placeholder="0" step="0.01">
-        </div>
-        <div class="field">
-          <label>Fecha de ese saldo</label>
-          <input type="date" id="fc_saldo_fecha">
-        </div>
-        <div class="form-section-label">¿Puedo cubrir la próxima nómina?</div>
-        <div class="field">
-          <label>Monto necesario para nómina (ARS)</label>
-          <input type="number" id="fc_nomina_monto" placeholder="0" step="0.01">
-        </div>
-        <div class="field">
-          <label>Fecha de pago de nómina</label>
-          <input type="date" id="fc_nomina_fecha">
+        <div class="fc-dash-header-actions">
+          <div class="chip-group" id="fcHorizonte">
+            <span class="chip" data-dias="30">30 días</span>
+            <span class="chip active" data-dias="60">60 días</span>
+            <span class="chip" data-dias="90">90 días</span>
+          </div>
+          <button type="button" class="fc-config-toggle" id="btnFcConfigToggle" title="Configurar saldo y nómina">⚙️</button>
         </div>
       </div>
-      <div class="formactions">
-        <button class="primary" id="btnGuardarFlujoConfig">Guardar</button>
+
+      <div class="fc-card" id="fcConfigCard" style="display:none;margin-bottom:16px;">
+        <div class="fc-card-header"><h3>Saldo inicial y nómina</h3></div>
+        <div class="formgrid">
+          <div class="field">
+            <label>Saldo actual en caja (ARS)</label>
+            <input type="number" id="fc_saldo_ars" placeholder="0" step="0.01">
+          </div>
+          <div class="field">
+            <label>Saldo actual en caja (USD)</label>
+            <input type="number" id="fc_saldo_usd" placeholder="0" step="0.01">
+          </div>
+          <div class="field">
+            <label>Fecha de ese saldo</label>
+            <input type="date" id="fc_saldo_fecha">
+          </div>
+          <div class="form-section-label">¿Puedo cubrir la próxima nómina?</div>
+          <div class="field">
+            <label>Monto necesario para nómina (ARS)</label>
+            <input type="number" id="fc_nomina_monto" placeholder="0" step="0.01">
+          </div>
+          <div class="field">
+            <label>Fecha de pago de nómina</label>
+            <input type="date" id="fc_nomina_fecha">
+          </div>
+        </div>
+        <div class="formactions">
+          <button class="primary" id="btnGuardarFlujoConfig">Guardar</button>
+        </div>
       </div>
-    </div>
 
-    <div id="fcNominaSemaforo"></div>
+      <div class="fc-kpi-row" id="fcStats"></div>
 
-    <div class="formpanel open" style="margin-bottom:16px;">
-      <h2>📅 Próximos pagos (15 días)</h2>
-      <div id="fcProximosPagos"></div>
-    </div>
+      <div id="fcNominaSemaforo"></div>
 
-    <div class="stats" id="fcStats" style="margin:16px 0;"></div>
-
-    <div class="formpanel open" style="margin-bottom:16px;">
-      <h2>Proyección de saldo (ARS)</h2>
-      <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0 0 12px;">Combina el saldo inicial, los cobros esperados (cheques a depositar y facturas pendientes, ajustados por el historial de mora de cada cliente) y los egresos cargados abajo.</p>
-      <div class="chip-group" id="fcHorizonte" style="margin-bottom:12px;">
-        <span class="chip" data-dias="30">30 días</span>
-        <span class="chip active" data-dias="60">60 días</span>
-        <span class="chip" data-dias="90">90 días</span>
+      <div class="fc-grid-2">
+        <div class="fc-card">
+          <div class="fc-card-header">
+            <h3>Evolución de saldo (ARS)</h3>
+            <span class="fc-card-badge">día a día</span>
+          </div>
+          <div id="fcChart" class="fc-chart-scroll"></div>
+          <div id="fcTablaProyeccion" style="margin-top:12px;"></div>
+        </div>
+        <div class="fc-card">
+          <div class="fc-card-header">
+            <h3>Cómo se arma el saldo</h3>
+            <span class="fc-card-badge">cobros − pagos</span>
+          </div>
+          <div id="fcWaterfall" class="fc-chart-scroll"></div>
+        </div>
       </div>
-      <div style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:4px 0 6px;font-weight:600;">Cómo se arma el saldo proyectado</div>
-      <div id="fcWaterfall" style="overflow-x:auto;margin-bottom:14px;"></div>
-      <div style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:4px 0 6px;font-weight:600;">Evolución día a día</div>
-      <div id="fcChart" style="overflow-x:auto;"></div>
-      <div id="fcTablaProyeccion" style="margin-top:12px;"></div>
-    </div>
 
-    <div class="formpanel open" style="margin-bottom:16px;">
-      <h2>Antigüedad de saldos (aging)</h2>
-      <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0 0 12px;">Facturas vencidas sin cobrar, y egresos cargados que vencen próximamente, agrupados por rango de días.</p>
-      <div class="formgrid">
-        <div class="field full">
-          <label>Por cobrar — facturas vencidas</label>
+      <div class="fc-grid-3">
+        <div class="fc-card">
+          <div class="fc-card-header"><h3>📅 Próximos pagos</h3><span class="fc-card-badge">15 días</span></div>
+          <div id="fcProximosPagos"></div>
+        </div>
+        <div class="fc-card">
+          <div class="fc-card-header"><h3>Por cobrar</h3><span class="fc-card-badge">vencido</span></div>
           <div id="fcAgingCobrar"></div>
         </div>
-        <div class="field full">
-          <label>Por pagar — egresos próximos a vencer</label>
+        <div class="fc-card">
+          <div class="fc-card-header"><h3>Por pagar</h3><span class="fc-card-badge">próximo</span></div>
           <div id="fcAgingPagar"></div>
         </div>
       </div>
     </div>
 
-    <div class="toolbar">
-      <button class="primary" id="btnNuevoEgreso">+ Nuevo egreso</button>
-      <input type="text" id="buscadorEgresos" placeholder="Buscar por concepto o categoría...">
-      <div class="chip-group" id="filtrosEgresos">
-        <span class="chip active" data-filter="todos">Todos</span>
-        <span class="chip" data-filter="ars">ARS</span>
-        <span class="chip" data-filter="usd">USD</span>
-        <span class="chip" data-filter="recurrente">Recurrentes</span>
+    <div class="fc-card" style="margin-bottom:16px;">
+      <div class="fc-card-header"><h3>Egresos cargados</h3></div>
+      <div class="toolbar">
+        <button class="primary" id="btnNuevoEgreso">+ Nuevo egreso</button>
+        <input type="text" id="buscadorEgresos" placeholder="Buscar por concepto o categoría...">
+        <div class="chip-group" id="filtrosEgresos">
+          <span class="chip active" data-filter="todos">Todos</span>
+          <span class="chip" data-filter="ars">ARS</span>
+          <span class="chip" data-filter="usd">USD</span>
+          <span class="chip" data-filter="recurrente">Recurrentes</span>
+        </div>
       </div>
-    </div>
 
-    <div class="formpanel" id="egresoPanel">
-      <h2 id="egresoFormTitulo">Cargar nuevo egreso</h2>
-      <div class="formgrid">
-        <div class="field">
-          <label>Fecha</label>
-          <input type="date" id="egr_fecha">
+      <div class="formpanel" id="egresoPanel">
+        <h2 id="egresoFormTitulo">Cargar nuevo egreso</h2>
+        <div class="formgrid">
+          <div class="field">
+            <label>Fecha</label>
+            <input type="date" id="egr_fecha">
+          </div>
+          <div class="field">
+            <label>Concepto</label>
+            <input type="text" id="egr_concepto" placeholder="Ej: Proveedor chino, alquiler, sueldos...">
+          </div>
+          <div class="field">
+            <label>Monto</label>
+            <input type="number" id="egr_monto" placeholder="0" step="0.01">
+          </div>
+          <div class="field">
+            <label>Moneda</label>
+            <select id="egr_moneda">
+              <option value="ARS">ARS</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Categoría</label>
+            <input type="text" id="egr_categoria" placeholder="Ej: Proveedores, sueldos, impuestos..." list="listaCategoriasEgresos">
+            <datalist id="listaCategoriasEgresos"></datalist>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;height:38px;">
+              <input type="checkbox" id="egr_recurrente" style="width:auto;">
+              Es un egreso recurrente (se repite cada mes)
+            </label>
+          </div>
         </div>
-        <div class="field">
-          <label>Concepto</label>
-          <input type="text" id="egr_concepto" placeholder="Ej: Proveedor chino, alquiler, sueldos...">
-        </div>
-        <div class="field">
-          <label>Monto</label>
-          <input type="number" id="egr_monto" placeholder="0" step="0.01">
-        </div>
-        <div class="field">
-          <label>Moneda</label>
-          <select id="egr_moneda">
-            <option value="ARS">ARS</option>
-            <option value="USD">USD</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Categoría</label>
-          <input type="text" id="egr_categoria" placeholder="Ej: Proveedores, sueldos, impuestos..." list="listaCategoriasEgresos">
-          <datalist id="listaCategoriasEgresos"></datalist>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;height:38px;">
-            <input type="checkbox" id="egr_recurrente" style="width:auto;">
-            Es un egreso recurrente (se repite cada mes)
-          </label>
+        <div class="formactions">
+          <button class="ghost" id="btnCancelarEgreso">Cancelar</button>
+          <button class="primary" id="btnGuardarEgreso">Guardar egreso</button>
         </div>
       </div>
-      <div class="formactions">
-        <button class="ghost" id="btnCancelarEgreso">Cancelar</button>
-        <button class="primary" id="btnGuardarEgreso">Guardar egreso</button>
-      </div>
-    </div>
 
-    <div id="contenidoEgresos">
-      <div class="loading">Cargando egresos...</div>
+      <div id="contenidoEgresos">
+        <div class="loading">Cargando egresos...</div>
+      </div>
     </div>
   </div>
 
@@ -3904,6 +4066,10 @@ $('tabs').addEventListener('click', (e) => {
 });
 
 $('btnGuardarFlujoConfig').addEventListener('click', guardarFlujoConfigDesdeForm);
+$('btnFcConfigToggle').addEventListener('click', () => {
+  const card = $('fcConfigCard');
+  card.style.display = card.style.display === 'none' ? '' : 'none';
+});
 $('btnNuevoEgreso').addEventListener('click', () => abrirFormularioEgreso());
 $('btnCancelarEgreso').addEventListener('click', cerrarFormularioEgreso);
 $('btnGuardarEgreso').addEventListener('click', guardarEgreso);
@@ -5038,32 +5204,46 @@ function saldoProyectadoEnFecha(puntos, fechaObjetivo) {
 
 function renderFcStats() {
   const proy = calcularProyeccionFlujo(fcHorizonteDias);
-  const stats = [];
-  stats.push(`
-    <div class="stat">
-      <div class="label">Saldo actual (ARS)</div>
-      <div class="value">${formatMonto(Number(flujoConfig.saldo_ars) || 0)}</div>
-      <div class="sub">${flujoConfig.saldo_fecha ? 'al ' + formatFecha(flujoConfig.saldo_fecha) : 'cargá la fecha del saldo'}</div>
+  const cards = [];
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon">💵</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Saldo actual (ARS)</div>
+        <div class="fc-kpi-value">${formatMonto(Number(flujoConfig.saldo_ars) || 0)}</div>
+        <div class="fc-kpi-sub">${flujoConfig.saldo_fecha ? 'al ' + formatFecha(flujoConfig.saldo_fecha) : 'cargá la fecha del saldo'}</div>
+      </div>
     </div>`);
-  stats.push(`
-    <div class="stat">
-      <div class="label">Saldo actual (USD)</div>
-      <div class="value">US$ ${new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(Number(flujoConfig.saldo_usd) || 0)}</div>
-      <div class="sub">reservado para proveedores en dólares</div>
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon">💲</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Saldo actual (USD)</div>
+        <div class="fc-kpi-value">US$ ${new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(Number(flujoConfig.saldo_usd) || 0)}</div>
+        <div class="fc-kpi-sub">reservado para proveedores en dólares</div>
+      </div>
     </div>`);
-  stats.push(`
-    <div class="stat ${proy.saldoFinalArs < 0 ? 'orange' : 'green'}">
-      <div class="label">Saldo proyectado a ${fcHorizonteDias} días (ARS)</div>
-      <div class="value">${formatMonto(proy.saldoFinalArs)}</div>
-      <div class="sub">al ${formatFechaObj(proy.hasta)}</div>
+  const colorFinal = proy.saldoFinalArs < 0 ? 'orange' : 'green';
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon ${colorFinal}">📈</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Saldo proyectado a ${fcHorizonteDias} días</div>
+        <div class="fc-kpi-value">${formatMonto(proy.saldoFinalArs)}</div>
+        <span class="fc-kpi-badge ${colorFinal}">al ${formatFechaObj(proy.hasta)}</span>
+      </div>
     </div>`);
-  stats.push(`
-    <div class="stat ${proy.minSaldoArs < 0 ? 'orange' : (proy.minSaldoArs < (Number(flujoConfig.saldo_ars)||0) * 0.2 ? 'amber' : '')}">
-      <div class="label">Punto más bajo proyectado (ARS)</div>
-      <div class="value">${formatMonto(proy.minSaldoArs)}</div>
-      <div class="sub">${proy.minSaldoArs < 0 ? '⚠️ el saldo se haría negativo el ' + formatFechaObj(proy.fechaMinArs) : 'el ' + formatFechaObj(proy.fechaMinArs)}</div>
+  const colorMin = proy.minSaldoArs < 0 ? 'orange' : (proy.minSaldoArs < (Number(flujoConfig.saldo_ars)||0) * 0.2 ? 'amber' : 'green');
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon ${colorMin}">⚠️</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Punto más bajo proyectado</div>
+        <div class="fc-kpi-value">${formatMonto(proy.minSaldoArs)}</div>
+        <span class="fc-kpi-badge ${colorMin}">${proy.minSaldoArs < 0 ? 'negativo el ' + formatFechaObj(proy.fechaMinArs) : 'el ' + formatFechaObj(proy.fechaMinArs)}</span>
+      </div>
     </div>`);
-  $('fcStats').innerHTML = stats.join('');
+  $('fcStats').innerHTML = cards.join('');
 }
 
 function renderFcSemaforo() {
@@ -5077,10 +5257,12 @@ function renderFcSemaforo() {
   const saldoEnFecha = saldoProyectadoEnFecha(proy.puntos, fechaNomina);
   const alcanza = saldoEnFecha >= montoNomina;
   $('fcNominaSemaforo').innerHTML = `
-    <div class="stat ${alcanza ? 'green' : 'orange'}" style="margin-bottom:16px;">
-      <div class="label">${alcanza ? '✅ Cubrís la próxima nómina' : '⛔ No llegarías a cubrir la próxima nómina'}</div>
-      <div class="value">${formatMonto(saldoEnFecha)} <span style="font-size:14px;font-weight:400;color:var(--text-muted);">proyectado vs. ${formatMonto(montoNomina)} necesarios</span></div>
-      <div class="sub">al ${formatFechaObj(fechaNomina)}${!alcanza ? ' — faltarían ' + formatMonto(montoNomina - saldoEnFecha) : ''}</div>
+    <div class="fc-alert ${alcanza ? '' : 'riesgo'}">
+      <div>
+        <div class="fc-alert-label">${alcanza ? '✅ Cubrís la próxima nómina' : '⛔ No llegarías a cubrir la próxima nómina'}</div>
+        <div class="fc-alert-sub">al ${formatFechaObj(fechaNomina)}${!alcanza ? ' — faltarían ' + formatMonto(montoNomina - saldoEnFecha) : ''}</div>
+      </div>
+      <div class="fc-alert-value">${formatMonto(saldoEnFecha)} <span style="font-family:var(--font-body);font-size:11.5px;font-weight:400;color:var(--text-muted);">vs. ${formatMonto(montoNomina)} necesarios</span></div>
     </div>`;
 }
 
@@ -5146,20 +5328,19 @@ function renderFcTablaProyeccion() {
 function renderFcProximosPagos() {
   const lista = proximosPagos(15);
   if (lista.length === 0) {
-    $('fcProximosPagos').innerHTML = `<p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0;">No hay egresos cargados que venzan en los próximos 15 días.</p>`;
+    $('fcProximosPagos').innerHTML = `<p class="fc-aging-empty">No hay egresos cargados que venzan en los próximos 15 días.</p>`;
     return;
   }
-  const filas = lista.map(e => `
-    <tr>
-      <td>${formatFechaObj(e.fecha)}</td>
-      <td>${escapeHtml(e.concepto)}</td>
-      <td>${formatMontoMoneda(Number(e.monto), e.moneda)}</td>
-    </tr>`).join('');
-  $('fcProximosPagos').innerHTML = `
-    <table class="client-table" style="margin:0;">
-      <thead><tr><th>Fecha</th><th>Concepto</th><th>Monto</th></tr></thead>
-      <tbody>${filas}</tbody>
-    </table>`;
+  const filas = lista.slice(0, 6).map(e => `
+    <div class="fc-mini-row">
+      <div class="fc-mini-row-left">
+        <span class="fc-mini-row-concepto">${escapeHtml(e.concepto)}</span>
+        <span class="fc-mini-row-fecha">${formatFechaObj(e.fecha)}</span>
+      </div>
+      <span class="fc-mini-row-monto">${formatMontoMoneda(Number(e.monto), e.moneda)}</span>
+    </div>`).join('');
+  const resto = lista.length > 6 ? `<div class="fc-aging-empty" style="margin-top:2px;">+${lista.length - 6} más en este rango</div>` : '';
+  $('fcProximosPagos').innerHTML = `<div class="fc-mini-list">${filas}</div>${resto}`;
 }
 
 function renderFcWaterfall() {
@@ -5216,30 +5397,31 @@ function renderFcWaterfall() {
   $('fcWaterfall').innerHTML = svg;
 }
 
-function tablaAgingHTML(buckets) {
+function tablaAgingHTML(buckets, colorClase) {
   const total = buckets.reduce((s,b) => s + b.total, 0);
   if (total === 0) {
-    return `<p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0;">Sin montos en este rango por ahora.</p>`;
+    return `<p class="fc-aging-empty">Sin montos en este rango por ahora.</p>`;
   }
+  const max = Math.max(...buckets.map(b => b.total), 1);
   const filas = buckets.map(b => `
-    <tr>
-      <td>${escapeHtml(b.label)}</td>
-      <td>${b.cantidad}</td>
-      <td class="${b.total > 0 ? 'debe' : ''}">${formatMonto(b.total)}</td>
-    </tr>`).join('');
-  return `
-    <table class="client-table" style="margin:0;">
-      <thead><tr><th>Rango</th><th>Cant.</th><th>Total</th></tr></thead>
-      <tbody>${filas}</tbody>
-    </table>`;
+    <div class="fc-aging-bar-row">
+      <div class="fc-aging-bar-label">
+        <span>${escapeHtml(b.label)}${b.cantidad ? ' · ' + b.cantidad : ''}</span>
+        <span style="font-family:var(--font-mono);font-weight:700;">${formatMonto(b.total)}</span>
+      </div>
+      <div class="fc-aging-bar-track">
+        <div class="fc-aging-bar-fill ${colorClase}" style="width:${Math.max(2, Math.round((b.total / max) * 100))}%;"></div>
+      </div>
+    </div>`).join('');
+  return `<div class="fc-aging-bars">${filas}</div>`;
 }
 
 function renderFcAgingCobrar() {
-  $('fcAgingCobrar').innerHTML = tablaAgingHTML(calcularAgingCobrar());
+  $('fcAgingCobrar').innerHTML = tablaAgingHTML(calcularAgingCobrar(), 'orange');
 }
 
 function renderFcAgingPagar() {
-  $('fcAgingPagar').innerHTML = tablaAgingHTML(calcularAgingPagar());
+  $('fcAgingPagar').innerHTML = tablaAgingHTML(calcularAgingPagar(), '');
 }
 
 function renderFlujoCaja() {
