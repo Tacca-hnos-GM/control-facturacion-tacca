@@ -1862,6 +1862,11 @@
 
     <div id="fcNominaSemaforo"></div>
 
+    <div class="formpanel open" style="margin-bottom:16px;">
+      <h2>📅 Próximos pagos (15 días)</h2>
+      <div id="fcProximosPagos"></div>
+    </div>
+
     <div class="stats" id="fcStats" style="margin:16px 0;"></div>
 
     <div class="formpanel open" style="margin-bottom:16px;">
@@ -1872,8 +1877,26 @@
         <span class="chip active" data-dias="60">60 días</span>
         <span class="chip" data-dias="90">90 días</span>
       </div>
+      <div style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:4px 0 6px;font-weight:600;">Cómo se arma el saldo proyectado</div>
+      <div id="fcWaterfall" style="overflow-x:auto;margin-bottom:14px;"></div>
+      <div style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:4px 0 6px;font-weight:600;">Evolución día a día</div>
       <div id="fcChart" style="overflow-x:auto;"></div>
       <div id="fcTablaProyeccion" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="formpanel open" style="margin-bottom:16px;">
+      <h2>Antigüedad de saldos (aging)</h2>
+      <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0 0 12px;">Facturas vencidas sin cobrar, y egresos cargados que vencen próximamente, agrupados por rango de días.</p>
+      <div class="formgrid">
+        <div class="field full">
+          <label>Por cobrar — facturas vencidas</label>
+          <div id="fcAgingCobrar"></div>
+        </div>
+        <div class="field full">
+          <label>Por pagar — egresos próximos a vencer</label>
+          <div id="fcAgingPagar"></div>
+        </div>
+      </div>
     </div>
 
     <div class="toolbar">
@@ -3898,6 +3921,7 @@ $('fcHorizonte').addEventListener('click', (e) => {
   e.target.classList.add('active');
   fcHorizonteDias = parseInt(e.target.dataset.dias, 10);
   renderFcStats();
+  renderFcWaterfall();
   renderFcChart();
   renderFcTablaProyeccion();
 });
@@ -4938,11 +4962,69 @@ function calcularProyeccionFlujo(dias) {
     if (saldoUsd < minSaldoUsd) minSaldoUsd = saldoUsd;
   });
 
+  const totalIngresos = eventosArs.filter(e => e.tipo === 'ingreso').reduce((s,e) => s + e.monto, 0);
+  const totalEgresos = -eventosArs.filter(e => e.tipo === 'egreso').reduce((s,e) => s + e.monto, 0);
+
   return {
     puntos, hasta,
     saldoFinalArs: saldo, minSaldoArs: minSaldo, fechaMinArs: fechaMin,
-    saldoFinalUsd: saldoUsd, minSaldoUsd: minSaldoUsd, egresosUsd
+    saldoFinalUsd: saldoUsd, minSaldoUsd: minSaldoUsd, egresosUsd,
+    totalIngresos, totalEgresos
   };
+}
+
+function aplicarBucketAging(dias, buckets) {
+  for (const b of buckets) {
+    if (dias >= b.desde && dias <= b.hasta) return b;
+  }
+  return buckets[buckets.length - 1];
+}
+
+function calcularAgingCobrar() {
+  const t = hoy();
+  const buckets = [
+    {label: '0-30 días', desde: 0, hasta: 30, total: 0, cantidad: 0},
+    {label: '31-60 días', desde: 31, hasta: 60, total: 0, cantidad: 0},
+    {label: '61+ días', desde: 61, hasta: Infinity, total: 0, cantidad: 0}
+  ];
+  ventas.forEach(v => {
+    if (v.estado === 'pagado') return;
+    const saldo = saldoPendiente(v);
+    if (saldo <= 0) return;
+    const diasVencido = Math.round((t - parseFecha(v.fecha_vencimiento)) / 86400000);
+    if (diasVencido < 0) return; // todavía no vence, no es "aging" de mora
+    const b = aplicarBucketAging(diasVencido, buckets);
+    b.total += saldo;
+    b.cantidad += 1;
+  });
+  return buckets;
+}
+
+function calcularAgingPagar() {
+  const t = hoy();
+  const hasta90 = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 90);
+  const buckets = [
+    {label: '0-15 días', desde: 0, hasta: 15, total: 0, cantidad: 0},
+    {label: '16-30 días', desde: 16, hasta: 30, total: 0, cantidad: 0},
+    {label: '31-60 días', desde: 31, hasta: 60, total: 0, cantidad: 0},
+    {label: '61-90 días', desde: 61, hasta: 90, total: 0, cantidad: 0}
+  ];
+  egresosEsperados(hasta90).filter(e => e.moneda === 'ARS').forEach(e => {
+    const diasHastaVencer = Math.round((e.fecha - t) / 86400000);
+    if (diasHastaVencer < 0) return;
+    const b = aplicarBucketAging(diasHastaVencer, buckets);
+    b.total += Number(e.monto);
+    b.cantidad += 1;
+  });
+  return buckets;
+}
+
+function proximosPagos(dias) {
+  const t = hoy();
+  const hastaN = new Date(t.getFullYear(), t.getMonth(), t.getDate() + dias);
+  return egresosEsperados(hastaN)
+    .filter(e => e.fecha >= t && e.fecha <= hastaN)
+    .sort((a,b) => a.fecha - b.fecha);
 }
 
 function saldoProyectadoEnFecha(puntos, fechaObjetivo) {
@@ -5061,6 +5143,105 @@ function renderFcTablaProyeccion() {
     <div style="font-family:var(--font-body);font-size:11.5px;color:var(--text-muted);margin-top:6px;">${eventos.length} movimiento${eventos.length===1?'':'s'} proyectado${eventos.length===1?'':'s'} — se ve la lista completa con scroll.</div>`;
 }
 
+function renderFcProximosPagos() {
+  const lista = proximosPagos(15);
+  if (lista.length === 0) {
+    $('fcProximosPagos').innerHTML = `<p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0;">No hay egresos cargados que venzan en los próximos 15 días.</p>`;
+    return;
+  }
+  const filas = lista.map(e => `
+    <tr>
+      <td>${formatFechaObj(e.fecha)}</td>
+      <td>${escapeHtml(e.concepto)}</td>
+      <td>${formatMontoMoneda(Number(e.monto), e.moneda)}</td>
+    </tr>`).join('');
+  $('fcProximosPagos').innerHTML = `
+    <table class="client-table" style="margin:0;">
+      <thead><tr><th>Fecha</th><th>Concepto</th><th>Monto</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table>`;
+}
+
+function renderFcWaterfall() {
+  const proy = calcularProyeccionFlujo(fcHorizonteDias);
+  const saldoInicial = Number(flujoConfig.saldo_ars) || 0;
+  const pasos = [
+    {label: 'Saldo inicial', valor: saldoInicial, tipo: 'saldo'},
+    {label: 'Cobros esperados', valor: proy.totalIngresos, tipo: 'ingreso'},
+    {label: 'Pagos previstos', valor: -proy.totalEgresos, tipo: 'egreso'},
+    {label: `Saldo a ${fcHorizonteDias} días`, valor: proy.saldoFinalArs, tipo: 'saldo'}
+  ];
+
+  const chartW = 480, chartH = 190, topPad = 26, botPad = 34, leftPad = 10, rightPad = 10;
+  const usableW = chartW - leftPad - rightPad;
+  const barW = Math.min(90, usableW / pasos.length - 16);
+  const paso = usableW / pasos.length;
+
+  const maxAbs = Math.max(saldoInicial, proy.totalIngresos, proy.totalEgresos, proy.saldoFinalArs, 1);
+  const usableH = chartH - topPad - botPad;
+  const escala = usableH / (maxAbs * 1.15 || 1);
+  const baseY = chartH - botPad;
+
+  let cursor = 0;
+  let svg = `<svg viewBox="0 0 ${chartW} ${chartH}" width="${chartW}" height="${chartH}" style="min-width:100%;">`;
+  svg += `<line x1="${leftPad}" y1="${baseY}" x2="${chartW-rightPad}" y2="${baseY}" stroke="#D3D8D7" stroke-width="1"/>`;
+
+  pasos.forEach((p, i) => {
+    const x = leftPad + i * paso + (paso - barW) / 2;
+    let y0, alto, color;
+    if (p.tipo === 'saldo') {
+      alto = Math.abs(p.valor) * escala;
+      y0 = baseY - alto;
+      cursor = p.valor;
+      color = '#034AA6';
+    } else if (p.tipo === 'ingreso') {
+      alto = p.valor * escala;
+      y0 = baseY - (cursor + p.valor) * escala;
+      cursor += p.valor;
+      color = '#2F8557';
+    } else {
+      alto = p.valor * escala;
+      y0 = baseY - cursor * escala;
+      cursor -= p.valor;
+      color = '#C7431E';
+    }
+    svg += `<rect x="${x.toFixed(1)}" y="${y0.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(alto,2).toFixed(1)}" rx="4" fill="${color}"/>`;
+    const montoTxt = p.tipo === 'egreso' ? '−' + formatMonto(p.valor) : (p.tipo==='ingreso' ? '+' + formatMonto(p.valor) : formatMonto(p.valor));
+    const labelTxt = p.valor >= 1000000 ? new Intl.NumberFormat('es-AR',{notation:'compact',maximumFractionDigits:1}).format(p.valor) : montoTxt;
+    svg += `<text x="${(x + barW/2).toFixed(1)}" y="${(y0-6).toFixed(1)}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="${color}">${escapeHtml(labelTxt)}</text>`;
+    svg += `<text x="${(x + barW/2).toFixed(1)}" y="${(baseY+18).toFixed(1)}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#5C6B6E">${escapeHtml(p.label)}</text>`;
+  });
+
+  svg += `</svg>`;
+  $('fcWaterfall').innerHTML = svg;
+}
+
+function tablaAgingHTML(buckets) {
+  const total = buckets.reduce((s,b) => s + b.total, 0);
+  if (total === 0) {
+    return `<p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0;">Sin montos en este rango por ahora.</p>`;
+  }
+  const filas = buckets.map(b => `
+    <tr>
+      <td>${escapeHtml(b.label)}</td>
+      <td>${b.cantidad}</td>
+      <td class="${b.total > 0 ? 'debe' : ''}">${formatMonto(b.total)}</td>
+    </tr>`).join('');
+  return `
+    <table class="client-table" style="margin:0;">
+      <thead><tr><th>Rango</th><th>Cant.</th><th>Total</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table>`;
+}
+
+function renderFcAgingCobrar() {
+  $('fcAgingCobrar').innerHTML = tablaAgingHTML(calcularAgingCobrar());
+}
+
+function renderFcAgingPagar() {
+  $('fcAgingPagar').innerHTML = tablaAgingHTML(calcularAgingPagar());
+}
+
 function renderFlujoCaja() {
   $('fc_saldo_ars').value = flujoConfig.saldo_ars || '';
   $('fc_saldo_usd').value = flujoConfig.saldo_usd || '';
@@ -5070,8 +5251,12 @@ function renderFlujoCaja() {
 
   renderFcStats();
   renderFcSemaforo();
+  renderFcProximosPagos();
+  renderFcWaterfall();
   renderFcChart();
   renderFcTablaProyeccion();
+  renderFcAgingCobrar();
+  renderFcAgingPagar();
   renderEgresos();
 }
 
