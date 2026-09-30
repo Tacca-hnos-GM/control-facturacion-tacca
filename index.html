@@ -1630,6 +1630,7 @@
     <div class="tabs" id="tabs">
       <span class="tab active" data-tab="ventas">Ventas</span>
       <span class="tab" data-tab="pedidos">Pedidos</span>
+      <span class="tab" data-tab="flujocaja">💰 Flujo de Caja</span>
       <span class="tab" data-tab="calendario">Calendario</span>
       <span class="tab" data-tab="deudores">Bitácora de deudores</span>
       <span class="tab" data-tab="bitacoraventas">Bitácora de ventas</span>
@@ -1825,6 +1826,110 @@
 
     <div id="contenidoPedidos">
       <div class="loading">Cargando pedidos...</div>
+    </div>
+  </div>
+
+  <div id="viewFlujoCaja" style="display:none;">
+    <div class="formpanel open" style="margin-bottom:16px;">
+      <h2>Saldo inicial y nómina</h2>
+      <div class="formgrid">
+        <div class="field">
+          <label>Saldo actual en caja (ARS)</label>
+          <input type="number" id="fc_saldo_ars" placeholder="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Saldo actual en caja (USD)</label>
+          <input type="number" id="fc_saldo_usd" placeholder="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Fecha de ese saldo</label>
+          <input type="date" id="fc_saldo_fecha">
+        </div>
+        <div class="form-section-label">¿Puedo cubrir la próxima nómina?</div>
+        <div class="field">
+          <label>Monto necesario para nómina (ARS)</label>
+          <input type="number" id="fc_nomina_monto" placeholder="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Fecha de pago de nómina</label>
+          <input type="date" id="fc_nomina_fecha">
+        </div>
+      </div>
+      <div class="formactions">
+        <button class="primary" id="btnGuardarFlujoConfig">Guardar</button>
+      </div>
+    </div>
+
+    <div id="fcNominaSemaforo"></div>
+
+    <div class="stats" id="fcStats" style="margin:16px 0;"></div>
+
+    <div class="formpanel open" style="margin-bottom:16px;">
+      <h2>Proyección de saldo (ARS)</h2>
+      <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0 0 12px;">Combina el saldo inicial, los cobros esperados (cheques a depositar y facturas pendientes, ajustados por el historial de mora de cada cliente) y los egresos cargados abajo.</p>
+      <div class="chip-group" id="fcHorizonte" style="margin-bottom:12px;">
+        <span class="chip" data-dias="30">30 días</span>
+        <span class="chip active" data-dias="60">60 días</span>
+        <span class="chip" data-dias="90">90 días</span>
+      </div>
+      <div id="fcChart" style="overflow-x:auto;"></div>
+      <div id="fcTablaProyeccion" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="primary" id="btnNuevoEgreso">+ Nuevo egreso</button>
+      <input type="text" id="buscadorEgresos" placeholder="Buscar por concepto o categoría...">
+      <div class="chip-group" id="filtrosEgresos">
+        <span class="chip active" data-filter="todos">Todos</span>
+        <span class="chip" data-filter="ars">ARS</span>
+        <span class="chip" data-filter="usd">USD</span>
+        <span class="chip" data-filter="recurrente">Recurrentes</span>
+      </div>
+    </div>
+
+    <div class="formpanel" id="egresoPanel">
+      <h2 id="egresoFormTitulo">Cargar nuevo egreso</h2>
+      <div class="formgrid">
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" id="egr_fecha">
+        </div>
+        <div class="field">
+          <label>Concepto</label>
+          <input type="text" id="egr_concepto" placeholder="Ej: Proveedor chino, alquiler, sueldos...">
+        </div>
+        <div class="field">
+          <label>Monto</label>
+          <input type="number" id="egr_monto" placeholder="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Moneda</label>
+          <select id="egr_moneda">
+            <option value="ARS">ARS</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Categoría</label>
+          <input type="text" id="egr_categoria" placeholder="Ej: Proveedores, sueldos, impuestos..." list="listaCategoriasEgresos">
+          <datalist id="listaCategoriasEgresos"></datalist>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;height:38px;">
+            <input type="checkbox" id="egr_recurrente" style="width:auto;">
+            Es un egreso recurrente (se repite cada mes)
+          </label>
+        </div>
+      </div>
+      <div class="formactions">
+        <button class="ghost" id="btnCancelarEgreso">Cancelar</button>
+        <button class="primary" id="btnGuardarEgreso">Guardar egreso</button>
+      </div>
+    </div>
+
+    <div id="contenidoEgresos">
+      <div class="loading">Cargando egresos...</div>
     </div>
   </div>
 
@@ -3223,6 +3328,7 @@ function refreshTodasLasVistas() {
   if ($('viewProductos').style.display !== 'none') renderProductos();
   if ($('viewBitacoraVentas').style.display !== 'none') renderBitacoraVentas();
   if ($('viewPedidos').style.display !== 'none') renderPedidos();
+  if ($('viewFlujoCaja').style.display !== 'none') renderFlujoCaja();
   renderHeaderResumen();
 }
 
@@ -3763,6 +3869,7 @@ $('tabs').addEventListener('click', (e) => {
   $('viewProductos').style.display = tab === 'productos' ? '' : 'none';
   $('viewBitacoraVentas').style.display = tab === 'bitacoraventas' ? '' : 'none';
   $('viewPedidos').style.display = tab === 'pedidos' ? '' : 'none';
+  $('viewFlujoCaja').style.display = tab === 'flujocaja' ? '' : 'none';
   if (tab === 'revision') renderRevision();
   if (tab === 'calendario') renderCalendario();
   if (tab === 'deudores') renderDeudores();
@@ -3770,6 +3877,29 @@ $('tabs').addEventListener('click', (e) => {
   if (tab === 'productos') renderProductos();
   if (tab === 'bitacoraventas') renderBitacoraVentas();
   if (tab === 'pedidos') renderPedidos();
+  if (tab === 'flujocaja') renderFlujoCaja();
+});
+
+$('btnGuardarFlujoConfig').addEventListener('click', guardarFlujoConfigDesdeForm);
+$('btnNuevoEgreso').addEventListener('click', () => abrirFormularioEgreso());
+$('btnCancelarEgreso').addEventListener('click', cerrarFormularioEgreso);
+$('btnGuardarEgreso').addEventListener('click', guardarEgreso);
+$('buscadorEgresos').addEventListener('input', renderEgresos);
+$('filtrosEgresos').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('chip')) return;
+  document.querySelectorAll('#filtrosEgresos .chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  filtroEgresos = e.target.dataset.filter;
+  renderEgresos();
+});
+$('fcHorizonte').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('chip')) return;
+  document.querySelectorAll('#fcHorizonte .chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  fcHorizonteDias = parseInt(e.target.dataset.dias, 10);
+  renderFcStats();
+  renderFcChart();
+  renderFcTablaProyeccion();
 });
 
 $('periodQuick').addEventListener('click', (e) => {
@@ -4108,7 +4238,9 @@ function exportarBackup() {
     productos: productos,
     pedidos_pendientes: pedidosPendientes,
     objetivo_mensual_items: objetivoMensual,
-    papelera: papelera
+    papelera: papelera,
+    egresos: egresos,
+    flujo_config: flujoConfig
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
@@ -4139,7 +4271,8 @@ function importarBackup(file) {
     const listaClientes = Array.isArray(data.clientes) ? data.clientes : [];
     const listaProductos = Array.isArray(data.productos) ? data.productos : [];
     const listaPedidosPendientes = Array.isArray(data.pedidos_pendientes) ? data.pedidos_pendientes : [];
-    const ok = await confirmarAccion(`Este archivo tiene ${lista.length} venta(s), ${listaClientes.length} cliente(s), ${listaProductos.length} producto(s) y ${listaPedidosPendientes.length} pedido(s) pendiente(s). Esto va a REEMPLAZAR todos los datos actuales de la app. ¿Continuar?`);
+    const listaEgresos = Array.isArray(data.egresos) ? data.egresos : [];
+    const ok = await confirmarAccion(`Este archivo tiene ${lista.length} venta(s), ${listaClientes.length} cliente(s), ${listaProductos.length} producto(s), ${listaPedidosPendientes.length} pedido(s) pendiente(s) y ${listaEgresos.length} egreso(s). Esto va a REEMPLAZAR todos los datos actuales de la app. ¿Continuar?`);
     if (!ok) return;
     ventas = lista;
     ventas.forEach(v => {
@@ -4159,6 +4292,15 @@ function importarBackup(file) {
     });
     productos = listaProductos;
     pedidosPendientes = listaPedidosPendientes;
+    egresos = listaEgresos;
+    egresos.forEach(e => {
+      if (e.moneda === undefined) e.moneda = 'ARS';
+      if (e.categoria === undefined) e.categoria = '';
+      if (e.recurrente === undefined) e.recurrente = false;
+    });
+    if (data.flujo_config) {
+      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null}, data.flujo_config);
+    }
     if (Array.isArray(data.papelera)) papelera = data.papelera;
     if (data.objetivo_mensual_items != null) objetivoMensual = Number(data.objetivo_mensual_items) || 0;
     await guardarEnStorage();
@@ -4166,6 +4308,8 @@ function importarBackup(file) {
     await guardarProductosEnStorage();
     await guardarPedidosPendientesEnStorage();
     await guardarPapeleraEnStorage();
+    await guardarEgresosEnStorage();
+    await guardarFlujoConfigEnStorage();
     if (data.objetivo_mensual_items != null) {
       try { await window.storage.set('objetivo_mensual_items', String(objetivoMensual), false); } catch (e) { /* noop */ }
     }
@@ -4492,6 +4636,451 @@ function totalItemsPedidosPendientes() {
   return pedidosPendientes
     .filter(p => !p.facturado)
     .reduce((s,p) => s + cantidadTotalPedido(p), 0);
+}
+
+// ===================== FLUJO DE CAJA =====================
+
+let egresos = [];
+let flujoConfig = {saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null};
+let editandoEgresoId = null;
+let fcHorizonteDias = 60;
+
+async function cargarEgresos() {
+  try {
+    const result = await window.storage.get('egresos', false);
+    egresos = result ? JSON.parse(result.value) : [];
+  } catch (e) {
+    egresos = [];
+  }
+  egresos.forEach(e => {
+    if (e.moneda === undefined) e.moneda = 'ARS';
+    if (e.categoria === undefined) e.categoria = '';
+    if (e.recurrente === undefined) e.recurrente = false;
+  });
+}
+
+async function guardarEgresosEnStorage() {
+  try {
+    await window.storage.set('egresos', JSON.stringify(egresos), false);
+  } catch (e) {
+    mostrarAviso('No se pudo guardar el egreso. Probá de nuevo.', 'error');
+  }
+}
+
+async function cargarFlujoConfig() {
+  try {
+    const result = await window.storage.get('flujo_config', false);
+    if (result) {
+      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null}, JSON.parse(result.value));
+    }
+  } catch (e) {
+    /* usa default */
+  }
+}
+
+async function guardarFlujoConfigEnStorage() {
+  try {
+    await window.storage.set('flujo_config', JSON.stringify(flujoConfig), false);
+  } catch (e) {
+    mostrarAviso('No se pudo guardar la configuración de flujo de caja. Probá de nuevo.', 'error');
+  }
+}
+
+function categoriasEgresosUsadas() {
+  const set = new Set();
+  egresos.forEach(e => { if (e.categoria) set.add(e.categoria); });
+  return Array.from(set).sort();
+}
+
+function actualizarDatalistCategoriasEgresos() {
+  const dl = $('listaCategoriasEgresos');
+  if (!dl) return;
+  dl.innerHTML = categoriasEgresosUsadas().map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+}
+
+let filtroEgresos = 'todos';
+
+function egresosFiltrados() {
+  const q = ($('buscadorEgresos') ? $('buscadorEgresos').value : '').trim().toLowerCase();
+  return egresos
+    .filter(e => {
+      if (filtroEgresos === 'ars' && e.moneda !== 'ARS') return false;
+      if (filtroEgresos === 'usd' && e.moneda !== 'USD') return false;
+      if (filtroEgresos === 'recurrente' && !e.recurrente) return false;
+      if (q && !(`${e.concepto} ${e.categoria}`.toLowerCase().includes(q))) return false;
+      return true;
+    })
+    .slice()
+    .sort((a,b) => parseFecha(b.fecha) - parseFecha(a.fecha));
+}
+
+function formatMontoMoneda(n, moneda) {
+  if (moneda === 'USD') {
+    return 'US$ ' + new Intl.NumberFormat('es-AR', {maximumFractionDigits:0}).format(n);
+  }
+  return formatMonto(n);
+}
+
+function egresoCardHTML(e) {
+  return `
+    <div class="pedido-card">
+      <div class="pedido-card-header">
+        <div class="pedido-card-titulo">
+          <span class="cliente">${escapeHtml(e.concepto || 'Sin concepto')}</span>
+          ${e.categoria ? `<span class="factura">${escapeHtml(e.categoria)}</span>` : ''}
+          ${e.recurrente ? `<span class="badge porvencer">Recurrente</span>` : ''}
+        </div>
+        <span class="pedido-card-cantidad">${formatMontoMoneda(Number(e.monto), e.moneda)}</span>
+      </div>
+      <div class="row-dates">
+        <span>Fecha: ${formatFecha(e.fecha)}</span>
+        <span>Moneda: ${escapeHtml(e.moneda)}</span>
+      </div>
+      <div class="row-actions" style="margin-top:8px;">
+        <button class="iconbtn" onclick="editarEgreso('${e.id}')">Editar</button>
+        <button class="iconbtn danger" onclick="eliminarEgreso('${e.id}')">Eliminar</button>
+      </div>
+    </div>`;
+}
+
+function renderEgresos() {
+  if (egresos.length === 0) {
+    $('contenidoEgresos').innerHTML = `
+      <div class="empty">
+        <h3>Todavía no cargaste ningún egreso</h3>
+        <p>Cargá acá los pagos a proveedores, sueldos, impuestos y demás salidas de caja para poder proyectar el saldo.</p>
+        <button class="primary" onclick="abrirFormularioEgreso()">+ Nuevo egreso</button>
+      </div>`;
+    return;
+  }
+  const lista = egresosFiltrados();
+  if (lista.length === 0) {
+    $('contenidoEgresos').innerHTML = `<div class="empty"><h3>No hay resultados</h3></div>`;
+    return;
+  }
+  $('contenidoEgresos').innerHTML = lista.map(egresoCardHTML).join('');
+}
+
+function abrirFormularioEgreso(id) {
+  editandoEgresoId = id || null;
+  actualizarDatalistCategoriasEgresos();
+  if (id) {
+    const e = egresos.find(x => x.id === id);
+    if (!e) return;
+    $('egresoFormTitulo').textContent = 'Editar egreso';
+    $('egr_fecha').value = e.fecha;
+    $('egr_concepto').value = e.concepto;
+    $('egr_monto').value = e.monto;
+    $('egr_moneda').value = e.moneda;
+    $('egr_categoria').value = e.categoria || '';
+    $('egr_recurrente').checked = !!e.recurrente;
+  } else {
+    $('egresoFormTitulo').textContent = 'Cargar nuevo egreso';
+    $('egr_fecha').value = toISODate(new Date());
+    $('egr_concepto').value = '';
+    $('egr_monto').value = '';
+    $('egr_moneda').value = 'ARS';
+    $('egr_categoria').value = '';
+    $('egr_recurrente').checked = false;
+  }
+  $('egresoPanel').classList.add('open');
+  $('egresoPanel').scrollIntoView({behavior:'smooth'});
+}
+
+function cerrarFormularioEgreso() {
+  $('egresoPanel').classList.remove('open');
+  editandoEgresoId = null;
+}
+
+function editarEgreso(id) {
+  abrirFormularioEgreso(id);
+}
+
+async function guardarEgreso() {
+  const fecha = $('egr_fecha').value;
+  const concepto = $('egr_concepto').value.trim();
+  const monto = parseFloat($('egr_monto').value);
+  const moneda = $('egr_moneda').value;
+  const categoria = $('egr_categoria').value.trim();
+  const recurrente = $('egr_recurrente').checked;
+
+  if (!fecha || !concepto || isNaN(monto)) {
+    mostrarAviso('Completá fecha, concepto y monto del egreso.', 'error');
+    return;
+  }
+
+  if (editandoEgresoId) {
+    const e = egresos.find(x => x.id === editandoEgresoId);
+    Object.assign(e, {fecha, concepto, monto, moneda, categoria, recurrente});
+  } else {
+    egresos.push({
+      id: 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      fecha, concepto, monto, moneda, categoria, recurrente
+    });
+  }
+
+  await guardarEgresosEnStorage();
+  cerrarFormularioEgreso();
+  renderFlujoCaja();
+}
+
+async function eliminarEgreso(id) {
+  const ok = await confirmarAccion('¿Eliminar este egreso?');
+  if (!ok) return;
+  egresos = egresos.filter(x => x.id !== id);
+  await guardarEgresosEnStorage();
+  renderFlujoCaja();
+}
+
+function ingresosEsperados() {
+  const lista = [];
+  const mapMorosidad = calcularMorosidad();
+  const t = hoy();
+
+  // 1) Pagos que ya cargamos a mano con fecha de cobro futura: cheques diferidos
+  //    a depositar (fecha_cobro) y cualquier otro pago registrado con una fecha
+  //    posterior a hoy. saldoPendiente() ya resta estos montos de la factura,
+  //    así que van SOLO acá y no se vuelven a contar en el punto 2.
+  ventas.forEach(v => {
+    (v.pagos || []).forEach(p => {
+      const fechaEvento = p.fecha_cobro || p.fecha;
+      if (!fechaEvento) return;
+      const fd = parseFecha(fechaEvento);
+      if (fd >= t) {
+        lista.push({
+          fecha: fd,
+          monto: Number(p.monto),
+          detalle: p.fecha_cobro
+            ? `Cheque de ${v.cliente} (Fact. ${v.factura})`
+            : `Pago cargado de ${v.cliente} (Fact. ${v.factura})`
+        });
+      }
+    });
+  });
+
+  // 2) El saldo de cada factura que TODAVÍA no tiene ningún pago cargado que lo
+  //    cubra (saldoPendiente ya descuenta los pagos del punto 1, por eso no se
+  //    duplica), proyectado a su fecha de vencimiento y corrido según el
+  //    historial de mora de ese cliente en particular.
+  ventas.forEach(v => {
+    if (v.estado === 'pagado') return;
+    const saldo = saldoPendiente(v);
+    if (saldo <= 0) return;
+    let fechaEsperada = parseFecha(v.fecha_vencimiento);
+    const m = mapMorosidad[v.cliente];
+    if (m && m.cantidadPagadas > 0) {
+      const promedioAtraso = Math.round(m.sumAtraso / m.cantidadPagadas);
+      if (promedioAtraso > 0) {
+        fechaEsperada = new Date(fechaEsperada.getTime() + promedioAtraso * 86400000);
+      }
+    }
+    lista.push({fecha: fechaEsperada, monto: saldo, detalle: `Cobro esperado de ${v.cliente} (Fact. ${v.factura})`});
+  });
+
+  return lista;
+}
+
+function egresosEsperados(hastaFecha) {
+  const lista = [];
+  const t = hoy();
+  egresos.forEach(e => {
+    const fechaBase = parseFecha(e.fecha);
+    if (!e.recurrente) {
+      if (fechaBase >= t && fechaBase <= hastaFecha) {
+        lista.push({fecha: fechaBase, monto: Number(e.monto), moneda: e.moneda, concepto: e.concepto});
+      }
+      return;
+    }
+    let cursor = new Date(fechaBase.getFullYear(), fechaBase.getMonth(), fechaBase.getDate());
+    let guard = 0;
+    while (cursor < t && guard < 240) {
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate());
+      guard++;
+    }
+    guard = 0;
+    while (cursor <= hastaFecha && guard < 60) {
+      lista.push({fecha: new Date(cursor), monto: Number(e.monto), moneda: e.moneda, concepto: e.concepto + ' (recurrente)'});
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate());
+      guard++;
+    }
+  });
+  return lista;
+}
+
+function calcularProyeccionFlujo(dias) {
+  const t = hoy();
+  const hasta = new Date(t.getFullYear(), t.getMonth(), t.getDate() + dias);
+
+  const ingresos = ingresosEsperados().filter(i => i.fecha <= hasta);
+  const egresosProyectados = egresosEsperados(hasta);
+  const egresosArs = egresosProyectados.filter(e => e.moneda === 'ARS');
+  const egresosUsd = egresosProyectados.filter(e => e.moneda === 'USD').slice().sort((a,b) => a.fecha - b.fecha);
+
+  const eventosArs = [];
+  ingresos.forEach(i => eventosArs.push({fecha: i.fecha, monto: i.monto, tipo: 'ingreso', detalle: i.detalle}));
+  egresosArs.forEach(e => eventosArs.push({fecha: e.fecha, monto: -e.monto, tipo: 'egreso', detalle: e.concepto}));
+  eventosArs.sort((a,b) => a.fecha - b.fecha);
+
+  let saldo = Number(flujoConfig.saldo_ars) || 0;
+  let minSaldo = saldo;
+  let fechaMin = t;
+  const puntos = [{fecha: t, saldo, detalle: 'Saldo actual', tipo: 'inicio', monto: 0}];
+  eventosArs.forEach(ev => {
+    saldo += ev.monto;
+    puntos.push({fecha: ev.fecha, saldo, detalle: ev.detalle, tipo: ev.tipo, monto: ev.monto});
+    if (saldo < minSaldo) { minSaldo = saldo; fechaMin = ev.fecha; }
+  });
+
+  let saldoUsd = Number(flujoConfig.saldo_usd) || 0;
+  let minSaldoUsd = saldoUsd;
+  egresosUsd.forEach(e => {
+    saldoUsd -= e.monto;
+    if (saldoUsd < minSaldoUsd) minSaldoUsd = saldoUsd;
+  });
+
+  return {
+    puntos, hasta,
+    saldoFinalArs: saldo, minSaldoArs: minSaldo, fechaMinArs: fechaMin,
+    saldoFinalUsd: saldoUsd, minSaldoUsd: minSaldoUsd, egresosUsd
+  };
+}
+
+function saldoProyectadoEnFecha(puntos, fechaObjetivo) {
+  let saldo = Number(flujoConfig.saldo_ars) || 0;
+  for (const p of puntos) {
+    if (p.fecha <= fechaObjetivo) saldo = p.saldo;
+    else break;
+  }
+  return saldo;
+}
+
+function renderFcStats() {
+  const proy = calcularProyeccionFlujo(fcHorizonteDias);
+  const stats = [];
+  stats.push(`
+    <div class="stat">
+      <div class="label">Saldo actual (ARS)</div>
+      <div class="value">${formatMonto(Number(flujoConfig.saldo_ars) || 0)}</div>
+      <div class="sub">${flujoConfig.saldo_fecha ? 'al ' + formatFecha(flujoConfig.saldo_fecha) : 'cargá la fecha del saldo'}</div>
+    </div>`);
+  stats.push(`
+    <div class="stat">
+      <div class="label">Saldo actual (USD)</div>
+      <div class="value">US$ ${new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(Number(flujoConfig.saldo_usd) || 0)}</div>
+      <div class="sub">reservado para proveedores en dólares</div>
+    </div>`);
+  stats.push(`
+    <div class="stat ${proy.saldoFinalArs < 0 ? 'orange' : 'green'}">
+      <div class="label">Saldo proyectado a ${fcHorizonteDias} días (ARS)</div>
+      <div class="value">${formatMonto(proy.saldoFinalArs)}</div>
+      <div class="sub">al ${formatFechaObj(proy.hasta)}</div>
+    </div>`);
+  stats.push(`
+    <div class="stat ${proy.minSaldoArs < 0 ? 'orange' : (proy.minSaldoArs < (Number(flujoConfig.saldo_ars)||0) * 0.2 ? 'amber' : '')}">
+      <div class="label">Punto más bajo proyectado (ARS)</div>
+      <div class="value">${formatMonto(proy.minSaldoArs)}</div>
+      <div class="sub">${proy.minSaldoArs < 0 ? '⚠️ el saldo se haría negativo el ' + formatFechaObj(proy.fechaMinArs) : 'el ' + formatFechaObj(proy.fechaMinArs)}</div>
+    </div>`);
+  $('fcStats').innerHTML = stats.join('');
+}
+
+function renderFcSemaforo() {
+  const montoNomina = Number(flujoConfig.nomina_monto) || 0;
+  if (montoNomina <= 0 || !flujoConfig.nomina_fecha) {
+    $('fcNominaSemaforo').innerHTML = '';
+    return;
+  }
+  const proy = calcularProyeccionFlujo(Math.max(fcHorizonteDias, 90));
+  const fechaNomina = parseFecha(flujoConfig.nomina_fecha);
+  const saldoEnFecha = saldoProyectadoEnFecha(proy.puntos, fechaNomina);
+  const alcanza = saldoEnFecha >= montoNomina;
+  $('fcNominaSemaforo').innerHTML = `
+    <div class="stat ${alcanza ? 'green' : 'orange'}" style="margin-bottom:16px;">
+      <div class="label">${alcanza ? '✅ Cubrís la próxima nómina' : '⛔ No llegarías a cubrir la próxima nómina'}</div>
+      <div class="value">${formatMonto(saldoEnFecha)} <span style="font-size:14px;font-weight:400;color:var(--text-muted);">proyectado vs. ${formatMonto(montoNomina)} necesarios</span></div>
+      <div class="sub">al ${formatFechaObj(fechaNomina)}${!alcanza ? ' — faltarían ' + formatMonto(montoNomina - saldoEnFecha) : ''}</div>
+    </div>`;
+}
+
+function renderFcChart() {
+  const proy = calcularProyeccionFlujo(fcHorizonteDias);
+  const puntos = proy.puntos;
+  if (puntos.length < 1) { $('fcChart').innerHTML = ''; return; }
+
+  const valores = puntos.map(p => p.saldo);
+  const max = Math.max(...valores, 0);
+  const min = Math.min(...valores, 0);
+  const rango = (max - min) || 1;
+
+  const chartW = Math.max(400, puntos.length * 40);
+  const chartH = 180, topPad = 20, botPad = 30, leftPad = 10, rightPad = 10;
+  const usableH = chartH - topPad - botPad;
+  const t0 = puntos[0].fecha.getTime();
+  const tSpan = (puntos[puntos.length - 1].fecha.getTime() - t0) || 1;
+  const usableW = chartW - leftPad - rightPad;
+
+  const xFor = (p) => leftPad + ((p.fecha.getTime() - t0) / tSpan) * usableW;
+  const yFor = (v) => topPad + usableH - ((v - min) / rango) * usableH;
+  const yZero = yFor(0);
+
+  let path = puntos.map((p,i) => `${i===0?'M':'L'} ${xFor(p).toFixed(1)} ${yFor(p.saldo).toFixed(1)}`).join(' ');
+
+  let svg = `<svg viewBox="0 0 ${chartW} ${chartH}" width="${chartW}" height="${chartH}" style="min-width:100%;">`;
+  svg += `<line x1="${leftPad}" y1="${yZero}" x2="${chartW-rightPad}" y2="${yZero}" stroke="#D3D8D7" stroke-width="1" stroke-dasharray="4,3"/>`;
+  svg += `<path d="${path}" fill="none" stroke="#2B6E7E" stroke-width="2.5"/>`;
+  puntos.forEach(p => {
+    const color = p.saldo < 0 ? '#C7431E' : '#2B6E7E';
+    svg += `<circle cx="${xFor(p).toFixed(1)}" cy="${yFor(p.saldo).toFixed(1)}" r="3.5" fill="${color}">`;
+    svg += `<title>${formatFechaObj(p.fecha)} — ${p.detalle}: ${formatMonto(p.saldo)}</title></circle>`;
+  });
+  svg += `</svg>`;
+  $('fcChart').innerHTML = svg;
+}
+
+function renderFcTablaProyeccion() {
+  const proy = calcularProyeccionFlujo(fcHorizonteDias);
+  const eventos = proy.puntos.filter(p => p.tipo !== 'inicio');
+  if (eventos.length === 0) {
+    $('fcTablaProyeccion').innerHTML = `<p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);">No hay cobros ni egresos proyectados en este horizonte todavía.</p>`;
+    return;
+  }
+  const filas = eventos.map(ev => `
+    <tr>
+      <td>${formatFechaObj(ev.fecha)}</td>
+      <td>${escapeHtml(ev.detalle || '')}</td>
+      <td class="${ev.tipo === 'egreso' ? 'debe' : ''}">${ev.monto >= 0 ? '+' : ''}${formatMonto(ev.monto)}</td>
+      <td class="${ev.saldo < 0 ? 'debe' : ''}">${formatMonto(ev.saldo)}</td>
+    </tr>`).join('');
+  $('fcTablaProyeccion').innerHTML = `
+    <table class="client-table">
+      <thead><tr><th>Fecha</th><th>Detalle</th><th>Movimiento</th><th>Saldo</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table>`;
+}
+
+function renderFlujoCaja() {
+  $('fc_saldo_ars').value = flujoConfig.saldo_ars || '';
+  $('fc_saldo_usd').value = flujoConfig.saldo_usd || '';
+  $('fc_saldo_fecha').value = flujoConfig.saldo_fecha || '';
+  $('fc_nomina_monto').value = flujoConfig.nomina_monto || '';
+  $('fc_nomina_fecha').value = flujoConfig.nomina_fecha || '';
+
+  renderFcStats();
+  renderFcSemaforo();
+  renderFcChart();
+  renderFcTablaProyeccion();
+  renderEgresos();
+}
+
+async function guardarFlujoConfigDesdeForm() {
+  flujoConfig.saldo_ars = parseFloat($('fc_saldo_ars').value) || 0;
+  flujoConfig.saldo_usd = parseFloat($('fc_saldo_usd').value) || 0;
+  flujoConfig.saldo_fecha = $('fc_saldo_fecha').value || null;
+  flujoConfig.nomina_monto = parseFloat($('fc_nomina_monto').value) || 0;
+  flujoConfig.nomina_fecha = $('fc_nomina_fecha').value || null;
+  await guardarFlujoConfigEnStorage();
+  mostrarAviso('Configuración de flujo de caja guardada.', null, true);
+  renderFlujoCaja();
 }
 
 function calcularKPIsMensuales() {
@@ -5520,6 +6109,27 @@ function activarSincronizacionEnVivo() {
       if ($('papeleraOverlay').classList.contains('open')) renderPapelera();
     } catch (e) { /* noop */ }
   });
+
+  window.storage.watch('egresos', (value) => {
+    if (value == null) return;
+    try {
+      egresos = JSON.parse(value);
+      egresos.forEach(e => {
+        if (e.moneda === undefined) e.moneda = 'ARS';
+        if (e.categoria === undefined) e.categoria = '';
+        if (e.recurrente === undefined) e.recurrente = false;
+      });
+      refreshTodasLasVistas();
+    } catch (e) { /* noop */ }
+  });
+
+  window.storage.watch('flujo_config', (value) => {
+    if (value == null) return;
+    try {
+      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null}, JSON.parse(value));
+      refreshTodasLasVistas();
+    } catch (e) { /* noop */ }
+  });
 }
 
 (async () => {
@@ -5531,6 +6141,8 @@ function activarSincronizacionEnVivo() {
   await cargarObjetivoMensual();
   await cargarPedidosPendientes();
   await cargarPapelera();
+  await cargarEgresos();
+  await cargarFlujoConfig();
   renderHeaderResumen();
   activarSincronizacionEnVivo();
 })();
