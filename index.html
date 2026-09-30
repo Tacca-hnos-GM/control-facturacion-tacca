@@ -1981,11 +1981,6 @@
           </div>
         </div>
         <div class="fc-dash-header-actions">
-          <div class="chip-group" id="fcHorizonte">
-            <span class="chip" data-dias="30">30 días</span>
-            <span class="chip active" data-dias="60">60 días</span>
-            <span class="chip" data-dias="90">90 días</span>
-          </div>
           <button type="button" class="fc-config-toggle" id="btnFcConfigToggle" title="Configurar saldo y nómina">⚙️</button>
         </div>
       </div>
@@ -2020,100 +2015,133 @@
         </div>
       </div>
 
-      <div class="fc-kpi-row" id="fcStats"></div>
+      <div class="rev-subnav" id="fcSubnav">
+        <span class="rev-subnav-link active" data-target="fcPanelResumen">Resumen</span>
+        <span class="rev-subnav-link" data-target="fcPanelEscenarios">Escenarios</span>
+        <span class="rev-subnav-link" data-target="fcPanelEgresos">Egresos</span>
+      </div>
 
-      <div id="fcNominaSemaforo"></div>
+      <div class="rev-panel" id="fcPanelResumen">
+        <div class="fc-kpi-row" id="fcStats"></div>
 
-      <div class="fc-grid-2">
+        <div id="fcNominaSemaforo"></div>
+
+        <div class="fc-grid-2">
+          <div class="fc-card">
+            <div class="fc-card-header">
+              <h3>Evolución de saldo (ARS)</h3>
+              <div class="chip-group" id="fcHorizonte">
+                <span class="chip" data-dias="30">30 días</span>
+                <span class="chip active" data-dias="60">60 días</span>
+                <span class="chip" data-dias="90">90 días</span>
+              </div>
+            </div>
+            <div id="fcChart" class="fc-chart-scroll"></div>
+            <div id="fcTablaProyeccion" style="margin-top:12px;"></div>
+          </div>
+          <div class="fc-card">
+            <div class="fc-card-header">
+              <h3>Cómo se arma el saldo</h3>
+              <span class="fc-card-badge">cobros − pagos</span>
+            </div>
+            <div id="fcWaterfall" class="fc-chart-scroll"></div>
+          </div>
+        </div>
+
+        <div class="fc-grid-3">
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>📅 Próximos pagos</h3><span class="fc-card-badge">15 días</span></div>
+            <div id="fcProximosPagos"></div>
+          </div>
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Por cobrar</h3><span class="fc-card-badge">vencido</span></div>
+            <div id="fcAgingCobrar"></div>
+          </div>
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Por pagar</h3><span class="fc-card-badge">próximo</span></div>
+            <div id="fcAgingPagar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rev-panel" id="fcPanelEscenarios" style="display:none;">
         <div class="fc-card">
           <div class="fc-card-header">
-            <h3>Evolución de saldo (ARS)</h3>
-            <span class="fc-card-badge">día a día</span>
+            <h3>Optimista vs. Pesimista (ARS)</h3>
+            <div class="chip-group" id="fcHorizonteEsc">
+              <span class="chip" data-dias="30">30 días</span>
+              <span class="chip active" data-dias="60">60 días</span>
+              <span class="chip" data-dias="90">90 días</span>
+            </div>
           </div>
-          <div id="fcChart" class="fc-chart-scroll"></div>
-          <div id="fcTablaProyeccion" style="margin-top:12px;"></div>
+          <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:0 0 12px;">
+            <strong>Optimista</strong>: todas las facturas se cobran justo en su fecha de vencimiento.
+            <strong>Pesimista</strong>: a los clientes con historial de mora se les aplica su atraso promedio; el resto se mantiene en fecha.
+          </p>
+          <div id="fcEscenariosChart" class="fc-chart-scroll"></div>
         </div>
-        <div class="fc-card">
-          <div class="fc-card-header">
-            <h3>Cómo se arma el saldo</h3>
-            <span class="fc-card-badge">cobros − pagos</span>
-          </div>
-          <div id="fcWaterfall" class="fc-chart-scroll"></div>
-        </div>
+        <div class="fc-kpi-row" id="fcEscenariosStats" style="margin-top:14px;"></div>
       </div>
 
-      <div class="fc-grid-3">
+      <div class="rev-panel" id="fcPanelEgresos" style="display:none;">
         <div class="fc-card">
-          <div class="fc-card-header"><h3>📅 Próximos pagos</h3><span class="fc-card-badge">15 días</span></div>
-          <div id="fcProximosPagos"></div>
-        </div>
-        <div class="fc-card">
-          <div class="fc-card-header"><h3>Por cobrar</h3><span class="fc-card-badge">vencido</span></div>
-          <div id="fcAgingCobrar"></div>
-        </div>
-        <div class="fc-card">
-          <div class="fc-card-header"><h3>Por pagar</h3><span class="fc-card-badge">próximo</span></div>
-          <div id="fcAgingPagar"></div>
-        </div>
-      </div>
-    </div>
+          <div class="fc-card-header"><h3>Egresos cargados</h3></div>
+          <div class="toolbar">
+            <button class="primary" id="btnNuevoEgreso">+ Nuevo egreso</button>
+            <input type="text" id="buscadorEgresos" placeholder="Buscar por concepto o categoría...">
+            <div class="chip-group" id="filtrosEgresos">
+              <span class="chip active" data-filter="todos">Todos</span>
+              <span class="chip" data-filter="ars">ARS</span>
+              <span class="chip" data-filter="usd">USD</span>
+              <span class="chip" data-filter="recurrente">Recurrentes</span>
+            </div>
+          </div>
 
-    <div class="fc-card" style="margin-bottom:16px;">
-      <div class="fc-card-header"><h3>Egresos cargados</h3></div>
-      <div class="toolbar">
-        <button class="primary" id="btnNuevoEgreso">+ Nuevo egreso</button>
-        <input type="text" id="buscadorEgresos" placeholder="Buscar por concepto o categoría...">
-        <div class="chip-group" id="filtrosEgresos">
-          <span class="chip active" data-filter="todos">Todos</span>
-          <span class="chip" data-filter="ars">ARS</span>
-          <span class="chip" data-filter="usd">USD</span>
-          <span class="chip" data-filter="recurrente">Recurrentes</span>
-        </div>
-      </div>
+          <div class="formpanel" id="egresoPanel">
+            <h2 id="egresoFormTitulo">Cargar nuevo egreso</h2>
+            <div class="formgrid">
+              <div class="field">
+                <label>Fecha</label>
+                <input type="date" id="egr_fecha">
+              </div>
+              <div class="field">
+                <label>Concepto</label>
+                <input type="text" id="egr_concepto" placeholder="Ej: Proveedor chino, alquiler, sueldos...">
+              </div>
+              <div class="field">
+                <label>Monto</label>
+                <input type="number" id="egr_monto" placeholder="0" step="0.01">
+              </div>
+              <div class="field">
+                <label>Moneda</label>
+                <select id="egr_moneda">
+                  <option value="ARS">ARS</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Categoría</label>
+                <input type="text" id="egr_categoria" placeholder="Ej: Proveedores, sueldos, impuestos..." list="listaCategoriasEgresos">
+                <datalist id="listaCategoriasEgresos"></datalist>
+              </div>
+              <div class="field">
+                <label>&nbsp;</label>
+                <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;height:38px;">
+                  <input type="checkbox" id="egr_recurrente" style="width:auto;">
+                  Es un egreso recurrente (se repite cada mes)
+                </label>
+              </div>
+            </div>
+            <div class="formactions">
+              <button class="ghost" id="btnCancelarEgreso">Cancelar</button>
+              <button class="primary" id="btnGuardarEgreso">Guardar egreso</button>
+            </div>
+          </div>
 
-      <div class="formpanel" id="egresoPanel">
-        <h2 id="egresoFormTitulo">Cargar nuevo egreso</h2>
-        <div class="formgrid">
-          <div class="field">
-            <label>Fecha</label>
-            <input type="date" id="egr_fecha">
-          </div>
-          <div class="field">
-            <label>Concepto</label>
-            <input type="text" id="egr_concepto" placeholder="Ej: Proveedor chino, alquiler, sueldos...">
-          </div>
-          <div class="field">
-            <label>Monto</label>
-            <input type="number" id="egr_monto" placeholder="0" step="0.01">
-          </div>
-          <div class="field">
-            <label>Moneda</label>
-            <select id="egr_moneda">
-              <option value="ARS">ARS</option>
-              <option value="USD">USD</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Categoría</label>
-            <input type="text" id="egr_categoria" placeholder="Ej: Proveedores, sueldos, impuestos..." list="listaCategoriasEgresos">
-            <datalist id="listaCategoriasEgresos"></datalist>
-          </div>
-          <div class="field">
-            <label>&nbsp;</label>
-            <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;height:38px;">
-              <input type="checkbox" id="egr_recurrente" style="width:auto;">
-              Es un egreso recurrente (se repite cada mes)
-            </label>
+          <div id="contenidoEgresos">
+            <div class="loading">Cargando egresos...</div>
           </div>
         </div>
-        <div class="formactions">
-          <button class="ghost" id="btnCancelarEgreso">Cancelar</button>
-          <button class="primary" id="btnGuardarEgreso">Guardar egreso</button>
-        </div>
-      </div>
-
-      <div id="contenidoEgresos">
-        <div class="loading">Cargando egresos...</div>
       </div>
     </div>
   </div>
@@ -4091,6 +4119,21 @@ $('fcHorizonte').addEventListener('click', (e) => {
   renderFcChart();
   renderFcTablaProyeccion();
 });
+$('fcHorizonteEsc').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('chip')) return;
+  document.querySelectorAll('#fcHorizonteEsc .chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  fcHorizonteDiasEsc = parseInt(e.target.dataset.dias, 10);
+  renderFcEscenarios();
+});
+$('fcSubnav').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('rev-subnav-link')) return;
+  document.querySelectorAll('#fcSubnav .rev-subnav-link').forEach(el => el.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('#viewFlujoCaja .rev-panel').forEach(panel => { panel.style.display = 'none'; });
+  const destino = $(e.target.dataset.target);
+  if (destino) destino.style.display = '';
+});
 
 $('periodQuick').addEventListener('click', (e) => {
   if (!e.target.classList.contains('chip')) return;
@@ -4834,6 +4877,7 @@ let egresos = [];
 let flujoConfig = {saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null};
 let editandoEgresoId = null;
 let fcHorizonteDias = 60;
+let fcHorizonteDiasEsc = 60;
 
 async function cargarEgresos() {
   try {
@@ -5022,7 +5066,10 @@ async function eliminarEgreso(id) {
   renderFlujoCaja();
 }
 
-function ingresosEsperados() {
+function ingresosEsperados(escenario) {
+  // escenario: 'pesimista' (default) aplica el atraso promedio de cada cliente
+  // moroso sobre su vencimiento; 'optimista' asume que todos cobran justo en
+  // la fecha de vencimiento de la factura, sin ajuste por mora.
   const lista = [];
   const mapMorosidad = calcularMorosidad();
   const t = hoy();
@@ -5057,11 +5104,13 @@ function ingresosEsperados() {
     const saldo = saldoPendiente(v);
     if (saldo <= 0) return;
     let fechaEsperada = parseFecha(v.fecha_vencimiento);
-    const m = mapMorosidad[v.cliente];
-    if (m && m.cantidadPagadas > 0) {
-      const promedioAtraso = Math.round(m.sumAtraso / m.cantidadPagadas);
-      if (promedioAtraso > 0) {
-        fechaEsperada = new Date(fechaEsperada.getTime() + promedioAtraso * 86400000);
+    if (escenario !== 'optimista') {
+      const m = mapMorosidad[v.cliente];
+      if (m && m.cantidadPagadas > 0) {
+        const promedioAtraso = Math.round(m.sumAtraso / m.cantidadPagadas);
+        if (promedioAtraso > 0) {
+          fechaEsperada = new Date(fechaEsperada.getTime() + promedioAtraso * 86400000);
+        }
       }
     }
     lista.push({fecha: fechaEsperada, monto: saldo, detalle: `Cobro esperado de ${v.cliente} (Fact. ${v.factura})`});
@@ -5097,11 +5146,11 @@ function egresosEsperados(hastaFecha) {
   return lista;
 }
 
-function calcularProyeccionFlujo(dias) {
+function calcularProyeccionFlujo(dias, escenario) {
   const t = hoy();
   const hasta = new Date(t.getFullYear(), t.getMonth(), t.getDate() + dias);
 
-  const ingresos = ingresosEsperados().filter(i => i.fecha <= hasta);
+  const ingresos = ingresosEsperados(escenario).filter(i => i.fecha <= hasta);
   const egresosProyectados = egresosEsperados(hasta);
   const egresosArs = egresosProyectados.filter(e => e.moneda === 'ARS');
   const egresosUsd = egresosProyectados.filter(e => e.moneda === 'USD').slice().sort((a,b) => a.fecha - b.fecha);
@@ -5301,6 +5350,92 @@ function renderFcChart() {
   $('fcChart').innerHTML = svg;
 }
 
+function renderFcEscenariosChart() {
+  const proyOpt = calcularProyeccionFlujo(fcHorizonteDiasEsc, 'optimista');
+  const proyPes = calcularProyeccionFlujo(fcHorizonteDiasEsc, 'pesimista');
+  const puntosOpt = proyOpt.puntos;
+  const puntosPes = proyPes.puntos;
+  if (puntosOpt.length < 1 || puntosPes.length < 1) { $('fcEscenariosChart').innerHTML = ''; return; }
+
+  const todosValores = [...puntosOpt.map(p => p.saldo), ...puntosPes.map(p => p.saldo)];
+  const max = Math.max(...todosValores, 0);
+  const min = Math.min(...todosValores, 0);
+  const rango = (max - min) || 1;
+
+  const puntosRef = puntosOpt.length >= puntosPes.length ? puntosOpt : puntosPes;
+  const chartW = Math.max(400, puntosRef.length * 40);
+  const chartH = 200, topPad = 20, botPad = 30, leftPad = 10, rightPad = 10;
+  const usableH = chartH - topPad - botPad;
+  const t0 = hoy().getTime();
+  const tFin = new Date(t0 + fcHorizonteDiasEsc * 86400000).getTime();
+  const tSpan = (tFin - t0) || 1;
+  const usableW = chartW - leftPad - rightPad;
+
+  const xFor = (p) => leftPad + ((p.fecha.getTime() - t0) / tSpan) * usableW;
+  const yFor = (v) => topPad + usableH - ((v - min) / rango) * usableH;
+  const yZero = yFor(0);
+
+  const pathOpt = puntosOpt.map((p,i) => `${i===0?'M':'L'} ${xFor(p).toFixed(1)} ${yFor(p.saldo).toFixed(1)}`).join(' ');
+  const pathPes = puntosPes.map((p,i) => `${i===0?'M':'L'} ${xFor(p).toFixed(1)} ${yFor(p.saldo).toFixed(1)}`).join(' ');
+
+  let svg = `<svg viewBox="0 0 ${chartW} ${chartH}" width="${chartW}" height="${chartH}" style="min-width:100%;">`;
+  svg += `<line x1="${leftPad}" y1="${yZero}" x2="${chartW-rightPad}" y2="${yZero}" stroke="#D3D8D7" stroke-width="1" stroke-dasharray="4,3"/>`;
+  svg += `<path d="${pathPes}" fill="none" stroke="#C7431E" stroke-width="2.5"/>`;
+  svg += `<path d="${pathOpt}" fill="none" stroke="#2F8557" stroke-width="2.5"/>`;
+  puntosPes.forEach(p => {
+    svg += `<circle cx="${xFor(p).toFixed(1)}" cy="${yFor(p.saldo).toFixed(1)}" r="3" fill="#C7431E"><title>Pesimista — ${formatFechaObj(p.fecha)} — ${p.detalle}: ${formatMonto(p.saldo)}</title></circle>`;
+  });
+  puntosOpt.forEach(p => {
+    svg += `<circle cx="${xFor(p).toFixed(1)}" cy="${yFor(p.saldo).toFixed(1)}" r="3" fill="#2F8557"><title>Optimista — ${formatFechaObj(p.fecha)} — ${p.detalle}: ${formatMonto(p.saldo)}</title></circle>`;
+  });
+  svg += `</svg>`;
+  svg += `<div style="display:flex;gap:16px;margin-top:6px;font-family:var(--font-body);font-size:11.5px;color:var(--text-muted);">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#2F8557;margin-right:5px;"></span>Optimista — cobros justo en fecha de vencimiento</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#C7431E;margin-right:5px;"></span>Pesimista — morosos atrasan según su promedio histórico</span>
+  </div>`;
+  $('fcEscenariosChart').innerHTML = svg;
+}
+
+function renderFcEscenariosStats() {
+  const proyOpt = calcularProyeccionFlujo(fcHorizonteDiasEsc, 'optimista');
+  const proyPes = calcularProyeccionFlujo(fcHorizonteDiasEsc, 'pesimista');
+  const brecha = proyOpt.saldoFinalArs - proyPes.saldoFinalArs;
+  const cards = [];
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon green">🙂</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Optimista a ${fcHorizonteDiasEsc} días</div>
+        <div class="fc-kpi-value">${formatMonto(proyOpt.saldoFinalArs)}</div>
+        <div class="fc-kpi-sub">mínimo proyectado: ${formatMonto(proyOpt.minSaldoArs)}</div>
+      </div>
+    </div>`);
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon orange">😟</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Pesimista a ${fcHorizonteDiasEsc} días</div>
+        <div class="fc-kpi-value">${formatMonto(proyPes.saldoFinalArs)}</div>
+        <div class="fc-kpi-sub">mínimo proyectado: ${formatMonto(proyPes.minSaldoArs)}</div>
+      </div>
+    </div>`);
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon amber">↔️</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Brecha entre escenarios</div>
+        <div class="fc-kpi-value">${formatMonto(brecha)}</div>
+        <div class="fc-kpi-sub">lo que cambiaría si los morosos pagan tarde</div>
+      </div>
+    </div>`);
+  $('fcEscenariosStats').innerHTML = cards.join('');
+}
+
+function renderFcEscenarios() {
+  renderFcEscenariosChart();
+  renderFcEscenariosStats();
+}
+
 function renderFcTablaProyeccion() {
   const proy = calcularProyeccionFlujo(fcHorizonteDias);
   const eventos = proy.puntos.filter(p => p.tipo !== 'inicio');
@@ -5439,6 +5574,7 @@ function renderFlujoCaja() {
   renderFcTablaProyeccion();
   renderFcAgingCobrar();
   renderFcAgingPagar();
+  renderFcEscenarios();
   renderEgresos();
 }
 
