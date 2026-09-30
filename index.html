@@ -957,9 +957,44 @@
   .fc-aging-bar-fill.orange{background:var(--orange);}
   .fc-aging-empty{font-family:var(--font-body);font-size:12px;color:var(--text-muted);}
 
+  .fc-caption{font-family:var(--font-body);font-size:11px;color:var(--text-muted);margin-top:8px;font-style:italic;}
+
+  .fc-spark-card{background:var(--card);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(3,74,166,.06);}
+  .fc-spark-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+  .fc-spark-label{font-family:var(--font-body);font-size:11.5px;color:var(--text-muted);}
+  .fc-spark-value{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text);}
+  .fc-spark-svg{display:block;width:100%;height:36px;}
+
+  .fc-donut-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .fc-donut-legend{display:flex;flex-direction:column;gap:8px;}
+  .fc-donut-legend-row{display:flex;align-items:center;gap:8px;font-family:var(--font-body);font-size:12.5px;color:var(--text);}
+  .fc-donut-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .fc-donut-legend-amount{font-family:var(--font-mono);font-weight:700;margin-left:auto;}
+
+  .fc-rank-list{display:flex;flex-direction:column;gap:8px;}
+  .fc-rank-row{
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:8px 10px;background:var(--steel-bg);border-radius:8px;
+  }
+  .fc-rank-pos{
+    width:22px;height:22px;border-radius:50%;background:var(--orange-bg);color:var(--orange-text);
+    font-family:var(--font-mono);font-size:11px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .fc-rank-body{display:flex;flex-direction:column;min-width:0;flex:1;}
+  .fc-rank-cliente{font-family:var(--font-body);font-size:12.5px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .fc-rank-sub{font-family:var(--font-body);font-size:11px;color:var(--text-muted);}
+  .fc-rank-monto{font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;}
+
+  .fc-gauge-track{background:var(--steel-bg);border-radius:10px;height:22px;position:relative;overflow:hidden;}
+  .fc-gauge-fill{height:100%;border-radius:10px 0 0 10px;}
+  .fc-gauge-marks{display:flex;justify-content:space-between;font-family:var(--font-body);font-size:10.5px;color:var(--text-muted);margin-top:4px;}
+  .fc-gauge-caption{font-family:var(--font-body);font-size:12.5px;color:var(--text);margin-top:8px;}
+
   @media (max-width:900px){
     .fc-grid-2{grid-template-columns:1fr;}
     .fc-grid-3{grid-template-columns:1fr;}
+    .fc-donut-wrap{flex-direction:column;align-items:flex-start;}
   }
 
   .row-main{min-width:0;}
@@ -2000,6 +2035,10 @@
             <label>Fecha de ese saldo</label>
             <input type="date" id="fc_saldo_fecha">
           </div>
+          <div class="field">
+            <label>Deuda total (ARS)</label>
+            <input type="number" id="fc_deuda_total" placeholder="0" step="0.01">
+          </div>
           <div class="form-section-label">¿Puedo cubrir la próxima nómina?</div>
           <div class="field">
             <label>Monto necesario para nómina (ARS)</label>
@@ -2018,53 +2057,34 @@
       <div class="rev-subnav" id="fcSubnav">
         <span class="rev-subnav-link active" data-target="fcPanelResumen">Resumen</span>
         <span class="rev-subnav-link" data-target="fcPanelEscenarios">Escenarios</span>
+        <span class="rev-subnav-link" data-target="fcPanelCobrarPagar">Cobrar y Pagar</span>
+        <span class="rev-subnav-link" data-target="fcPanelRunway">Runway</span>
+        <span class="rev-subnav-link" data-target="fcPanelOperativo">Operativo</span>
         <span class="rev-subnav-link" data-target="fcPanelEgresos">Egresos</span>
       </div>
 
+      <!-- ===== 1. Resumen ===== -->
       <div class="rev-panel" id="fcPanelResumen">
-        <div class="fc-kpi-row" id="fcStats"></div>
+        <div class="fc-kpi-row" id="fcResumenKpis"></div>
 
         <div id="fcNominaSemaforo"></div>
 
-        <div class="fc-grid-2">
-          <div class="fc-card">
-            <div class="fc-card-header">
-              <h3>Evolución de saldo (ARS)</h3>
-              <div class="chip-group" id="fcHorizonte">
-                <span class="chip" data-dias="30">30 días</span>
-                <span class="chip active" data-dias="60">60 días</span>
-                <span class="chip" data-dias="90">90 días</span>
-              </div>
-            </div>
-            <div id="fcChart" class="fc-chart-scroll"></div>
-            <div id="fcTablaProyeccion" style="margin-top:12px;"></div>
+        <div class="fc-card" style="margin-bottom:14px;">
+          <div class="fc-card-header">
+            <h3>Tendencia de saldo neto — 12 meses</h3>
+            <span class="fc-card-badge">reconstrucción histórica</span>
           </div>
-          <div class="fc-card">
-            <div class="fc-card-header">
-              <h3>Cómo se arma el saldo</h3>
-              <span class="fc-card-badge">cobros − pagos</span>
-            </div>
-            <div id="fcWaterfall" class="fc-chart-scroll"></div>
-          </div>
+          <div id="fcNetCashTrend" class="fc-chart-scroll"></div>
+          <div class="fc-caption" id="fcNetCashTrendCaption"></div>
         </div>
 
-        <div class="fc-grid-3">
-          <div class="fc-card">
-            <div class="fc-card-header"><h3>📅 Próximos pagos</h3><span class="fc-card-badge">15 días</span></div>
-            <div id="fcProximosPagos"></div>
-          </div>
-          <div class="fc-card">
-            <div class="fc-card-header"><h3>Por cobrar</h3><span class="fc-card-badge">vencido</span></div>
-            <div id="fcAgingCobrar"></div>
-          </div>
-          <div class="fc-card">
-            <div class="fc-card-header"><h3>Por pagar</h3><span class="fc-card-badge">próximo</span></div>
-            <div id="fcAgingPagar"></div>
-          </div>
-        </div>
+        <div class="fc-grid-3" id="fcResumenSparklines"></div>
       </div>
 
+      <!-- ===== 2. Escenarios ===== -->
       <div class="rev-panel" id="fcPanelEscenarios" style="display:none;">
+        <div class="fc-kpi-row" id="fcEscenariosKpis"></div>
+
         <div class="fc-card">
           <div class="fc-card-header">
             <h3>Optimista vs. Pesimista (ARS)</h3>
@@ -2081,8 +2101,100 @@
           <div id="fcEscenariosChart" class="fc-chart-scroll"></div>
         </div>
         <div class="fc-kpi-row" id="fcEscenariosStats" style="margin-top:14px;"></div>
+
+        <div class="fc-grid-2" style="margin-top:14px;">
+          <div class="fc-card">
+            <div class="fc-card-header">
+              <h3>Cash Movement Drivers</h3>
+              <span class="fc-card-badge">cobros − pagos</span>
+            </div>
+            <div id="fcWaterfall" class="fc-chart-scroll"></div>
+          </div>
+          <div class="fc-card">
+            <div class="fc-card-header">
+              <h3>Proyección día a día</h3>
+              <div class="chip-group" id="fcHorizonte">
+                <span class="chip" data-dias="30">30 días</span>
+                <span class="chip active" data-dias="60">60 días</span>
+                <span class="chip" data-dias="90">90 días</span>
+              </div>
+            </div>
+            <div id="fcTablaProyeccion"></div>
+          </div>
+        </div>
       </div>
 
+      <!-- ===== 3. Cobrar y Pagar ===== -->
+      <div class="rev-panel" id="fcPanelCobrarPagar" style="display:none;">
+        <div class="fc-kpi-row" id="fcCobrarPagarKpis"></div>
+
+        <div class="fc-grid-2">
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Por cobrar vs. por pagar</h3></div>
+            <div id="fcDonutCobrarPagar"></div>
+          </div>
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Top clientes con mayor atraso</h3></div>
+            <div id="fcTopDeudores"></div>
+          </div>
+        </div>
+
+        <div class="fc-grid-2">
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Por cobrar</h3><span class="fc-card-badge">vencido</span></div>
+            <div id="fcAgingCobrar"></div>
+          </div>
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Por pagar</h3><span class="fc-card-badge">próximo</span></div>
+            <div id="fcAgingPagar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 4. Runway ===== -->
+      <div class="rev-panel" id="fcPanelRunway" style="display:none;">
+        <div class="fc-kpi-row" id="fcRunwayKpis"></div>
+
+        <div class="fc-card" style="margin-bottom:14px;">
+          <div class="fc-card-header"><h3>Cash Runway Countdown</h3></div>
+          <div id="fcRunwayGauge"></div>
+        </div>
+
+        <div class="fc-grid-2">
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Burn Rate — últimos 6 meses</h3></div>
+            <div id="fcBurnTrend" class="fc-chart-scroll"></div>
+            <div class="fc-caption">Basado en egresos reales cargados. Como es una función nueva, el historial puede ser corto al principio.</div>
+          </div>
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Runway Projections</h3></div>
+            <div id="fcRunwayTabla"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 5. Operativo ===== -->
+      <div class="rev-panel" id="fcPanelOperativo" style="display:none;">
+        <div class="fc-kpi-row" id="fcOperativoKpis"></div>
+
+        <div class="fc-card" style="margin-bottom:14px;">
+          <div class="fc-card-header"><h3>Liquidity Health</h3></div>
+          <div id="fcLiquidityGauge"></div>
+        </div>
+
+        <div class="fc-grid-2">
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>Ingresos y egresos diarios</h3><span class="fc-card-badge">últimos/próximos días</span></div>
+            <div id="fcComboChart" class="fc-chart-scroll"></div>
+          </div>
+          <div class="fc-card">
+            <div class="fc-card-header"><h3>📅 Próximos pagos</h3><span class="fc-card-badge">15 días</span></div>
+            <div id="fcProximosPagos"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 6. Egresos ===== -->
       <div class="rev-panel" id="fcPanelEgresos" style="display:none;">
         <div class="fc-card">
           <div class="fc-card-header"><h3>Egresos cargados</h3></div>
@@ -3885,6 +3997,36 @@ function rangoAnterior(desde, hasta) {
   return {desde: prevDesde, hasta: prevHasta};
 }
 
+// Para los filtros rápidos (hoy/quincena/mes) el "período anterior" tiene que ser
+// el período calendario real anterior (el día de ayer, la otra quincena, el mes
+// calendario anterior), no una ventana de la misma cantidad de días hacia atrás:
+// esa ventana no coincide con el período calendario cuando los dos períodos no
+// tienen la misma cantidad de días (p. ej. comparar septiembre -30 días- contra
+// agosto -31 días- corría el período anterior un día). Para un rango personalizado
+// (sin modo conocido) se sigue usando la ventana de misma longitud, que es el único
+// criterio razonable ahí.
+function rangoAnteriorSegunModo(desde, hasta, mode) {
+  if (mode === 'hoy') {
+    const d = new Date(desde);
+    d.setDate(d.getDate() - 1);
+    return {desde: d, hasta: d};
+  }
+  if (mode === 'quincena') {
+    const year = desde.getFullYear(), month = desde.getMonth(), day = desde.getDate();
+    if (day === 1) {
+      // Primera quincena -> segunda quincena del mes anterior
+      return {desde: new Date(year, month - 1, 16), hasta: new Date(year, month, 0)};
+    }
+    // Segunda quincena -> primera quincena del mismo mes
+    return {desde: new Date(year, month, 1), hasta: new Date(year, month, 15)};
+  }
+  if (mode === 'mes') {
+    const year = desde.getFullYear(), month = desde.getMonth();
+    return {desde: new Date(year, month - 1, 1), hasta: new Date(year, month, 0)};
+  }
+  return rangoAnterior(desde, hasta);
+}
+
 function enRango(fechaStr, desde, hasta) {
   const d = parseFecha(fechaStr);
   return d >= desde && d <= hasta;
@@ -3933,7 +4075,7 @@ function renderRevision() {
   $('r_hasta').value = toISODate(hasta);
 
   const actual = metricasPeriodo(desde, hasta);
-  const prevRango = rangoAnterior(desde, hasta);
+  const prevRango = rangoActual ? rangoAnterior(desde, hasta) : rangoAnteriorSegunModo(desde, hasta, periodMode);
   const previo = metricasPeriodo(prevRango.desde, prevRango.hasta);
   const pendienteActual = ventas.filter(v => v.estado !== 'pagado').reduce((s,v) => s + saldoPendiente(v), 0);
 
@@ -4114,9 +4256,7 @@ $('fcHorizonte').addEventListener('click', (e) => {
   document.querySelectorAll('#fcHorizonte .chip').forEach(c => c.classList.remove('active'));
   e.target.classList.add('active');
   fcHorizonteDias = parseInt(e.target.dataset.dias, 10);
-  renderFcStats();
   renderFcWaterfall();
-  renderFcChart();
   renderFcTablaProyeccion();
 });
 $('fcHorizonteEsc').addEventListener('click', (e) => {
@@ -4532,7 +4672,7 @@ function importarBackup(file) {
       if (e.recurrente === undefined) e.recurrente = false;
     });
     if (data.flujo_config) {
-      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null}, data.flujo_config);
+      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null, deuda_total: 0}, data.flujo_config);
     }
     if (Array.isArray(data.papelera)) papelera = data.papelera;
     if (data.objetivo_mensual_items != null) objetivoMensual = Number(data.objetivo_mensual_items) || 0;
@@ -4874,7 +5014,7 @@ function totalItemsPedidosPendientes() {
 // ===================== FLUJO DE CAJA =====================
 
 let egresos = [];
-let flujoConfig = {saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null};
+let flujoConfig = {saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null, deuda_total: 0};
 let editandoEgresoId = null;
 let fcHorizonteDias = 60;
 let fcHorizonteDiasEsc = 60;
@@ -4905,7 +5045,7 @@ async function cargarFlujoConfig() {
   try {
     const result = await window.storage.get('flujo_config', false);
     if (result) {
-      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null}, JSON.parse(result.value));
+      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null, deuda_total: 0}, JSON.parse(result.value));
     }
   } catch (e) {
     /* usa default */
@@ -5251,48 +5391,642 @@ function saldoProyectadoEnFecha(puntos, fechaObjetivo) {
   return saldo;
 }
 
-function renderFcStats() {
-  const proy = calcularProyeccionFlujo(fcHorizonteDias);
+/* ===================================================================
+   Flujo de Caja — funciones de datos y render para las 6 sub-pestañas
+   (Resumen / Escenarios / Cobrar y Pagar / Runway / Operativo / Egresos)
+   =================================================================== */
+
+// --- Reconstrucción histórica de movimientos reales (cobros y egresos ARS) ---
+function calcularMovimientosHistoricos(desde, hasta) {
+  const lista = [];
+  ventas.forEach(v => {
+    (v.pagos || []).forEach(p => {
+      const fechaPago = p.fecha;
+      if (!fechaPago) return;
+      const fd = parseFecha(fechaPago);
+      if (fd >= desde && fd <= hasta) {
+        lista.push({fecha: fd, monto: Number(p.monto)});
+      }
+    });
+  });
+  egresos.forEach(e => {
+    if (e.moneda !== 'ARS') return; // el saldo_ars solo se mueve por egresos en ARS
+    const fechaBase = parseFecha(e.fecha);
+    if (!e.recurrente) {
+      if (fechaBase >= desde && fechaBase <= hasta) {
+        lista.push({fecha: fechaBase, monto: -Number(e.monto)});
+      }
+      return;
+    }
+    let cursor = new Date(fechaBase.getFullYear(), fechaBase.getMonth(), fechaBase.getDate());
+    let guard = 0;
+    while (cursor > desde && guard < 240) {
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, cursor.getDate());
+      guard++;
+    }
+    guard = 0;
+    while (cursor < desde && guard < 240) {
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate());
+      guard++;
+    }
+    guard = 0;
+    while (cursor <= hasta && guard < 240) {
+      lista.push({fecha: new Date(cursor), monto: -Number(e.monto)});
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate());
+      guard++;
+    }
+  });
+  return lista;
+}
+
+// Reconstruye (aproximadamente) el saldo ARS a fin de cada uno de los últimos
+// 12 meses, partiendo del saldo actual cargado y restando hacia atrás los
+// movimientos reales (cobros y egresos) que ocurrieron entre cada punto y hoy.
+// Es una aproximación honesta, no un valor auditado mes a mes.
+function calcularSaldoHistoricoMensual() {
+  const anchorDate = flujoConfig.saldo_fecha ? parseFecha(flujoConfig.saldo_fecha) : hoy();
+  const anchorSaldo = Number(flujoConfig.saldo_ars) || 0;
+  const inicio = new Date(anchorDate.getFullYear(), anchorDate.getMonth() - 11, 1);
+  const movimientos = calcularMovimientosHistoricos(inicio, anchorDate);
+  const puntos = [];
+  for (let i = 11; i >= 0; i--) {
+    let finMes = new Date(anchorDate.getFullYear(), anchorDate.getMonth() - i + 1, 0);
+    if (finMes > anchorDate) finMes = anchorDate;
+    const movsPosteriores = movimientos.filter(m => m.fecha > finMes && m.fecha <= anchorDate);
+    const neto = movsPosteriores.reduce((s,m) => s + m.monto, 0);
+    puntos.push({fecha: finMes, saldo: anchorSaldo - neto});
+  }
+  return puntos;
+}
+
+function calcularDSO() {
+  const t = hoy();
+  const desde90 = new Date(t.getFullYear(), t.getMonth(), t.getDate() - 90);
+  const ventas90 = ventas.filter(v => {
+    const fv = parseFecha(v.fecha_venta);
+    return fv >= desde90 && fv <= t;
+  });
+  const totalVentas90 = ventas90.reduce((s,v) => s + Number(v.monto), 0);
+  const totalAR = ventas.filter(v => v.estado !== 'pagado').reduce((s,v) => s + saldoPendiente(v), 0);
+  if (totalVentas90 <= 0) return null;
+  return Math.round((totalAR / totalVentas90) * 90);
+}
+
+function calcularOverduePct() {
+  const pendientes = ventas.filter(v => v.estado !== 'pagado');
+  const totalPend = pendientes.reduce((s,v) => s + saldoPendiente(v), 0);
+  if (totalPend <= 0) return 0;
+  const totalVencido = pendientes.filter(v => diasHasta(v.fecha_vencimiento) < 0).reduce((s,v) => s + saldoPendiente(v), 0);
+  return Math.round((totalVencido / totalPend) * 100);
+}
+
+function calcularConfianzaCobros() {
+  const t = hoy();
+  const hasta = new Date(t.getFullYear(), t.getMonth(), t.getDate() + fcHorizonteDiasEsc);
+  const mapMorosidad = calcularMorosidad();
+  let totalEsperado = 0, totalConfiable = 0;
+  ventas.forEach(v => {
+    if (v.estado === 'pagado') return;
+    const saldo = saldoPendiente(v);
+    if (saldo <= 0) return;
+    const venc = parseFecha(v.fecha_vencimiento);
+    if (venc > hasta) return;
+    totalEsperado += saldo;
+    if (!esClienteMoroso(v.cliente, mapMorosidad)) totalConfiable += saldo;
+  });
+  if (totalEsperado <= 0) return null;
+  return Math.round((totalConfiable / totalEsperado) * 100);
+}
+
+function calcularTopDeudores(n) {
+  const map = {};
+  ventas.forEach(v => {
+    if (v.estado === 'pagado') return;
+    const saldo = saldoPendiente(v);
+    if (saldo <= 0) return;
+    const dias = diasHasta(v.fecha_vencimiento);
+    if (dias >= 0) return; // solo facturas vencidas
+    const diasAtraso = Math.abs(dias);
+    if (!map[v.cliente]) map[v.cliente] = {cliente: v.cliente, saldo: 0, maxAtraso: 0, score: 0, facturas: 0};
+    map[v.cliente].saldo += saldo;
+    map[v.cliente].maxAtraso = Math.max(map[v.cliente].maxAtraso, diasAtraso);
+    map[v.cliente].score += saldo * diasAtraso;
+    map[v.cliente].facturas += 1;
+  });
+  return Object.values(map).sort((a,b) => b.score - a.score).slice(0, n || 5);
+}
+
+function calcularBurnRateTrend() {
+  const t = hoy();
+  const meses = [];
+  for (let i = 5; i >= 0; i--) {
+    const inicio = new Date(t.getFullYear(), t.getMonth() - i, 1);
+    const fin = new Date(t.getFullYear(), t.getMonth() - i + 1, 0);
+    const finReal = fin > t ? t : fin;
+    const movs = calcularMovimientosHistoricos(inicio, finReal).filter(m => m.monto < 0);
+    const total = -movs.reduce((s,m) => s + m.monto, 0);
+    meses.push({fecha: inicio, total});
+  }
+  return meses;
+}
+
+function calcularBurnRateMensual() {
+  const trend = calcularBurnRateTrend().filter(m => m.total > 0);
+  if (trend.length === 0) return 0;
+  const ultimos = trend.slice(-3);
+  return ultimos.reduce((s,m) => s + m.total, 0) / ultimos.length;
+}
+
+function calcularRunwayMeses() {
+  const saldo = Number(flujoConfig.saldo_ars) || 0;
+  const burn = calcularBurnRateMensual();
+  if (burn <= 0) return null;
+  return saldo / burn;
+}
+
+function calcularRunwayProyecciones() {
+  const saldo = Number(flujoConfig.saldo_ars) || 0;
+  const burn = calcularBurnRateMensual();
+  const escenarios = [
+    {label: 'Ritmo actual', factor: 1},
+    {label: '+20% de gasto', factor: 1.2},
+    {label: '−20% de gasto', factor: 0.8}
+  ];
+  return escenarios.map(e => {
+    const burnEsc = burn * e.factor;
+    return {label: e.label, burn: burnEsc, runway: burnEsc > 0 ? saldo / burnEsc : null};
+  });
+}
+
+function calcularLiquidityHealth() {
+  const burn = calcularBurnRateMensual();
+  const saldo = Number(flujoConfig.saldo_ars) || 0;
+  const runwayMeses = burn > 0 ? saldo / burn : (saldo > 0 ? 6 : 0);
+  const overduePct = calcularOverduePct();
+  const scoreRunway = Math.min(70, (Math.min(runwayMeses, 6) / 6) * 70);
+  const scoreAtraso = Math.max(0, (100 - overduePct) * 0.3);
+  return Math.max(0, Math.min(100, Math.round(scoreRunway + scoreAtraso)));
+}
+
+// Movimientos diarios reales (histórico reciente) + proyectados (próximos días)
+function calcularInflowOutflowDiario(diasHaciaAtras, diasHaciaAdelante) {
+  const t = hoy();
+  const desde = new Date(t.getFullYear(), t.getMonth(), t.getDate() - diasHaciaAtras);
+  const hasta = new Date(t.getFullYear(), t.getMonth(), t.getDate() + diasHaciaAdelante);
+
+  const histMovs = calcularMovimientosHistoricos(desde, t);
+  const ingresosProy = ingresosEsperados('pesimista').filter(i => i.fecha > t && i.fecha <= hasta);
+  const egresosProy = egresosEsperados(hasta).filter(e => e.fecha > t && e.moneda === 'ARS');
+
+  const totalHistMovs = histMovs.reduce((s,m) => s + m.monto, 0);
+  let running = (Number(flujoConfig.saldo_ars) || 0) - totalHistMovs;
+
+  const dias = [];
+  for (let d = new Date(desde); d <= hasta; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
+    dias.push(new Date(d));
+  }
+
+  return dias.map(dia => {
+    const isoD = toISODate(dia);
+    let inflow = 0, outflow = 0;
+    if (dia <= t) {
+      histMovs.forEach(m => {
+        if (toISODate(m.fecha) !== isoD) return;
+        if (m.monto > 0) inflow += m.monto; else outflow += -m.monto;
+      });
+    } else {
+      ingresosProy.forEach(i => { if (toISODate(i.fecha) === isoD) inflow += i.monto; });
+      egresosProy.forEach(e => { if (toISODate(e.fecha) === isoD) outflow += Number(e.monto); });
+    }
+    running += (inflow - outflow);
+    return {fecha: dia, inflow, outflow, saldo: running, esProyectado: dia > t};
+  });
+}
+
+// --- 1. Resumen ---
+function renderFcResumenKpis() {
+  const hist = calcularSaldoHistoricoMensual();
+  const saldoActual = Number(flujoConfig.saldo_ars) || 0;
+  const puntoHace3 = hist.length >= 4 ? hist[hist.length - 4] : (hist[0] || null);
+  const deltaAbs = puntoHace3 ? saldoActual - puntoHace3.saldo : 0;
+  const deltaPct = (puntoHace3 && puntoHace3.saldo !== 0) ? Math.round((deltaAbs / Math.abs(puntoHace3.saldo)) * 100) : null;
+  const deltaClase = deltaAbs >= 0 ? 'green' : 'orange';
+
   const cards = [];
   cards.push(`
     <div class="fc-kpi-card">
       <div class="fc-kpi-icon">💵</div>
       <div class="fc-kpi-body">
-        <div class="fc-kpi-label">Saldo actual (ARS)</div>
-        <div class="fc-kpi-value">${formatMonto(Number(flujoConfig.saldo_ars) || 0)}</div>
+        <div class="fc-kpi-label">Net Cash Position</div>
+        <div class="fc-kpi-value">${formatMonto(saldoActual)}</div>
+        <span class="fc-kpi-badge ${deltaClase}">${deltaAbs >= 0 ? '▲' : '▼'} ${formatMonto(Math.abs(deltaAbs))} vs. hace 3 meses</span>
+      </div>
+    </div>`);
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon ${deltaClase}">📈</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Quarterly Trend</div>
+        <div class="fc-kpi-value">${deltaPct === null ? 'N/D' : (deltaPct >= 0 ? '+' : '') + deltaPct + '%'}</div>
+        <div class="fc-kpi-sub">variación del saldo en el último trimestre (reconstruido)</div>
+      </div>
+    </div>`);
+  const deuda = Number(flujoConfig.deuda_total) || 0;
+  const ratio = deuda > 0 ? saldoActual / deuda : null;
+  const ratioClase = ratio === null ? '' : (ratio >= 1 ? 'green' : (ratio >= 0.5 ? 'amber' : 'orange'));
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon ${ratioClase}">⚖️</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Cash-to-Debt Ratio</div>
+        <div class="fc-kpi-value">${ratio === null ? 'Sin datos' : ratio.toFixed(2) + 'x'}</div>
+        <div class="fc-kpi-sub">${deuda > 0 ? 'deuda total cargada: ' + formatMonto(deuda) : 'cargá la deuda total en ⚙️'}</div>
+      </div>
+    </div>`);
+  $('fcResumenKpis').innerHTML = cards.join('');
+}
+
+function renderFcNetCashTrend() {
+  const hist = calcularSaldoHistoricoMensual();
+  if (hist.length < 1) { $('fcNetCashTrend').innerHTML = ''; return; }
+  const valores = hist.map(p => p.saldo);
+  const max = Math.max(...valores, 0);
+  const min = Math.min(...valores, 0);
+  const rango = (max - min) || 1;
+  // Esta serie siempre tiene 12 puntos fijos (calcularSaldoHistoricoMensual devuelve
+  // exactamente un punto por mes de los últimos 12 meses), a diferencia de otros
+  // gráficos de flujo de caja cuyo largo depende de un horizonte elegido por el
+  // usuario. Por eso acá conviene que el SVG escale para entrar siempre en el
+  // ancho disponible (mismo criterio que revChart/evolChart), en vez de fijar un
+  // ancho en píxeles y depender del scroll horizontal de .fc-chart-scroll.
+  const chartW = 660;
+  const chartH = 190, topPad = 22, botPad = 32, leftPad = 10, rightPad = 10;
+  const usableH = chartH - topPad - botPad;
+  const usableW = chartW - leftPad - rightPad;
+  const paso = usableW / Math.max(1, hist.length - 1);
+  const xFor = (i) => leftPad + i * paso;
+  const yFor = (v) => topPad + usableH - ((v - min) / rango) * usableH;
+  const yZero = yFor(0);
+
+  const linePts = hist.map((p,i) => `${xFor(i).toFixed(1)},${yFor(p.saldo).toFixed(1)}`).join(' ');
+  const areaPts = `${xFor(0).toFixed(1)},${yZero.toFixed(1)} ${linePts} ${xFor(hist.length-1).toFixed(1)},${yZero.toFixed(1)}`;
+
+  const umbralRiesgo = Math.max(0, max * 0.2);
+  const riesgoIdx = hist.findIndex(p => p.saldo < umbralRiesgo);
+
+  let svg = `<svg viewBox="0 0 ${chartW} ${chartH}" style="width:100%;height:auto;">`;
+  svg += `<polygon points="${areaPts}" fill="#034AA6" fill-opacity="0.12"/>`;
+  svg += `<line x1="${leftPad}" y1="${yZero}" x2="${chartW-rightPad}" y2="${yZero}" stroke="#D3D8D7" stroke-width="1" stroke-dasharray="4,3"/>`;
+  svg += `<polyline points="${linePts}" fill="none" stroke="#034AA6" stroke-width="2.5"/>`;
+  hist.forEach((p,i) => {
+    const color = p.saldo < 0 ? '#C7431E' : '#034AA6';
+    svg += `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(p.saldo).toFixed(1)}" r="3.5" fill="${color}"><title>${formatFechaObj(p.fecha)} — ${formatMonto(p.saldo)}</title></circle>`;
+    svg += `<text x="${xFor(i).toFixed(1)}" y="${chartH-10}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" fill="#5C6B6E">${String(p.fecha.getMonth()+1).padStart(2,'0')}/${String(p.fecha.getFullYear()).slice(2)}</text>`;
+  });
+  if (riesgoIdx >= 0) {
+    const p = hist[riesgoIdx];
+    svg += `<circle cx="${xFor(riesgoIdx).toFixed(1)}" cy="${yFor(p.saldo).toFixed(1)}" r="8" fill="none" stroke="#C7431E" stroke-width="2"><title>Riesgo de liquidez: saldo bajo el 20% del máximo del período</title></circle>`;
+    svg += `<text x="${xFor(riesgoIdx).toFixed(1)}" y="${(yFor(p.saldo)-14).toFixed(1)}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="700" fill="#C7431E">⚠ riesgo</text>`;
+  }
+  svg += `</svg>`;
+  $('fcNetCashTrend').innerHTML = svg;
+  if ($('fcNetCashTrendCaption')) {
+    $('fcNetCashTrendCaption').textContent = 'Los saldos mensuales anteriores son una reconstrucción aproximada a partir del saldo actual cargado y de los cobros/egresos reales, no un valor auditado mes a mes.';
+  }
+}
+
+function renderFcSparklineSvg(valores) {
+  if (!valores || valores.length < 2) return '<svg class="fc-spark-svg" viewBox="0 0 100 36"></svg>';
+  const max = Math.max(...valores);
+  const min = Math.min(...valores);
+  const rango = (max - min) || 1;
+  const paso = 100 / (valores.length - 1);
+  const pts = valores.map((v,i) => `${(i*paso).toFixed(1)},${(32 - ((v-min)/rango)*28).toFixed(1)}`).join(' ');
+  const color = valores[valores.length-1] >= valores[0] ? '#2F8557' : '#C7431E';
+  return `<svg class="fc-spark-svg" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2"/></svg>`;
+}
+
+function renderFcResumenSparklines() {
+  const hist = calcularSaldoHistoricoMensual();
+  const ultimos6 = hist.slice(-6);
+  const saldoActual = Number(flujoConfig.saldo_ars) || 0;
+  const deuda = Number(flujoConfig.deuda_total) || 0;
+
+  const cardCash = `
+    <div class="fc-spark-card">
+      <div class="fc-spark-header"><span class="fc-spark-label">Cash Balance</span><span class="fc-spark-value">${formatMonto(saldoActual)}</span></div>
+      ${renderFcSparklineSvg(ultimos6.map(p => p.saldo))}
+      <div class="fc-caption" style="margin-top:4px;">últimos 6 meses (reconstruido)</div>
+    </div>`;
+
+  const cardDebt = `
+    <div class="fc-spark-card">
+      <div class="fc-spark-header"><span class="fc-spark-label">Short-Term Debt</span><span class="fc-spark-value">${deuda > 0 ? formatMonto(deuda) : 'sin cargar'}</span></div>
+      ${renderFcSparklineSvg([deuda, deuda])}
+      <div class="fc-caption" style="margin-top:4px;">valor actual — sin histórico cargado</div>
+    </div>`;
+
+  const ratioSerie = deuda > 0 ? ultimos6.map(p => p.saldo / deuda) : [];
+  const cardRatio = `
+    <div class="fc-spark-card">
+      <div class="fc-spark-header"><span class="fc-spark-label">Cash Ratio</span><span class="fc-spark-value">${deuda > 0 ? (saldoActual/deuda).toFixed(2) + 'x' : 'N/D'}</span></div>
+      ${deuda > 0 ? renderFcSparklineSvg(ratioSerie) : '<div class="fc-aging-empty">Cargá la deuda total para verlo</div>'}
+      <div class="fc-caption" style="margin-top:4px;">saldo histórico / deuda total actual (aprox.)</div>
+    </div>`;
+
+  $('fcResumenSparklines').innerHTML = cardCash + cardDebt + cardRatio;
+}
+
+// --- 2. Escenarios (KPIs nuevos; el gráfico, waterfall y tabla ya existen) ---
+function renderFcEscenariosKpis() {
+  const proyOpt = calcularProyeccionFlujo(fcHorizonteDiasEsc, 'optimista');
+  const proyPes = calcularProyeccionFlujo(fcHorizonteDiasEsc, 'pesimista');
+  const proyectado = (proyOpt.saldoFinalArs + proyPes.saldoFinalArs) / 2;
+  const varianza = proyOpt.saldoFinalArs - proyPes.saldoFinalArs;
+  const varianzaPct = proyOpt.saldoFinalArs !== 0 ? Math.round((varianza / Math.abs(proyOpt.saldoFinalArs)) * 100) : null;
+  const confianza = calcularConfianzaCobros();
+
+  const cards = [];
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon">🎯</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Projected Cash Balance</div>
+        <div class="fc-kpi-value">${formatMonto(proyectado)}</div>
+        <div class="fc-kpi-sub">promedio entre optimista y pesimista a ${fcHorizonteDiasEsc} días</div>
+      </div>
+    </div>`);
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon amber">↔️</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Scenario Variance</div>
+        <div class="fc-kpi-value">${formatMonto(varianza)}</div>
+        <div class="fc-kpi-sub">${varianzaPct === null ? 'diferencia entre escenarios' : varianzaPct + '% de diferencia entre escenarios'}</div>
+      </div>
+    </div>`);
+  const confClase = confianza === null ? '' : (confianza >= 70 ? 'green' : (confianza >= 40 ? 'amber' : 'orange'));
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon ${confClase}">🔒</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Confidence Interval</div>
+        <div class="fc-kpi-value">${confianza === null ? 'N/D' : confianza + '%'}</div>
+        <div class="fc-kpi-sub">% de los cobros esperados que vienen de clientes no morosos</div>
+      </div>
+    </div>`);
+  $('fcEscenariosKpis').innerHTML = cards.join('');
+}
+
+// --- 3. Cobrar y Pagar ---
+function renderFcCobrarPagarKpis() {
+  const dso = calcularDSO();
+  const overduePct = calcularOverduePct();
+  const cards = [];
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon">📆</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">DSO (días de cobro)</div>
+        <div class="fc-kpi-value">${dso === null ? 'N/D' : dso + ' días'}</div>
+        <div class="fc-kpi-sub">saldo por cobrar / ventas de los últimos 90 días × 90</div>
+      </div>
+    </div>`);
+  const clase = overduePct > 40 ? 'orange' : (overduePct > 15 ? 'amber' : 'green');
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon ${clase}">⏰</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Overdue Invoices %</div>
+        <div class="fc-kpi-value">${overduePct}%</div>
+        <div class="fc-kpi-sub">del saldo pendiente total, ya vencido</div>
+      </div>
+    </div>`);
+  $('fcCobrarPagarKpis').innerHTML = cards.join('');
+}
+
+function renderFcDonutCobrarPagar() {
+  const totalCobrar = ventas.filter(v => v.estado !== 'pagado').reduce((s,v) => s + saldoPendiente(v), 0);
+  const totalPagar = calcularAgingPagar().reduce((s,b) => s + b.total, 0);
+  const total = totalCobrar + totalPagar;
+  if (total <= 0) {
+    $('fcDonutCobrarPagar').innerHTML = `<p class="fc-aging-empty">No hay saldos por cobrar ni por pagar cargados todavía.</p>`;
+    return;
+  }
+  const r = 52, cx = 60, cy = 60, circ = 2 * Math.PI * r;
+  const pctCobrar = totalCobrar / total;
+  const dashCobrar = pctCobrar * circ;
+  const svg = `
+    <svg viewBox="0 0 120 120" width="120" height="120">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#D3D8D7" stroke-width="16"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#C7431E" stroke-width="16"
+        stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="0" transform="rotate(-90 ${cx} ${cy})"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#034AA6" stroke-width="16"
+        stroke-dasharray="${dashCobrar.toFixed(1)} ${circ.toFixed(1)}" stroke-dashoffset="0" transform="rotate(-90 ${cx} ${cy})"/>
+      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#22282A">${Math.round(pctCobrar*100)}%</text>
+      <text x="${cx}" y="${cy+13}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#5C6B6E">por cobrar</text>
+    </svg>`;
+  const legend = `
+    <div class="fc-donut-legend">
+      <div class="fc-donut-legend-row"><span class="fc-donut-dot" style="background:#034AA6;"></span>Por cobrar<span class="fc-donut-legend-amount">${formatMonto(totalCobrar)}</span></div>
+      <div class="fc-donut-legend-row"><span class="fc-donut-dot" style="background:#C7431E;"></span>Por pagar<span class="fc-donut-legend-amount">${formatMonto(totalPagar)}</span></div>
+    </div>`;
+  $('fcDonutCobrarPagar').innerHTML = `<div class="fc-donut-wrap">${svg}${legend}</div>`;
+}
+
+function renderFcTopDeudores() {
+  const top = calcularTopDeudores(5);
+  if (top.length === 0) {
+    $('fcTopDeudores').innerHTML = `<p class="fc-aging-empty">No hay clientes con facturas vencidas por ahora.</p>`;
+    return;
+  }
+  const filas = top.map((d,i) => `
+    <div class="fc-rank-row">
+      <span class="fc-rank-pos">${i+1}</span>
+      <div class="fc-rank-body">
+        <span class="fc-rank-cliente">${escapeHtml(d.cliente)}</span>
+        <span class="fc-rank-sub">${d.maxAtraso} días de atraso · ${d.facturas} factura${d.facturas===1?'':'s'}</span>
+      </div>
+      <span class="fc-rank-monto">${formatMonto(d.saldo)}</span>
+    </div>`).join('');
+  $('fcTopDeudores').innerHTML = `<div class="fc-rank-list">${filas}</div>`;
+}
+
+// --- 4. Runway ---
+function renderFcRunwayKpis() {
+  const saldo = Number(flujoConfig.saldo_ars) || 0;
+  const burn = calcularBurnRateMensual();
+  const runway = calcularRunwayMeses();
+  const cards = [];
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon">💰</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Current Cash Reserve</div>
+        <div class="fc-kpi-value">${formatMonto(saldo)}</div>
         <div class="fc-kpi-sub">${flujoConfig.saldo_fecha ? 'al ' + formatFecha(flujoConfig.saldo_fecha) : 'cargá la fecha del saldo'}</div>
       </div>
     </div>`);
   cards.push(`
     <div class="fc-kpi-card">
-      <div class="fc-kpi-icon">💲</div>
+      <div class="fc-kpi-icon orange">🔥</div>
       <div class="fc-kpi-body">
-        <div class="fc-kpi-label">Saldo actual (USD)</div>
-        <div class="fc-kpi-value">US$ ${new Intl.NumberFormat('es-AR',{maximumFractionDigits:0}).format(Number(flujoConfig.saldo_usd) || 0)}</div>
-        <div class="fc-kpi-sub">reservado para proveedores en dólares</div>
+        <div class="fc-kpi-label">Monthly Burn Rate</div>
+        <div class="fc-kpi-value">${burn > 0 ? formatMonto(burn) : 'Sin datos'}</div>
+        <div class="fc-kpi-sub">promedio de egresos reales de los últimos meses</div>
       </div>
     </div>`);
-  const colorFinal = proy.saldoFinalArs < 0 ? 'orange' : 'green';
+  const clase = runway === null ? '' : (runway < 1 ? 'orange' : (runway < 3 ? 'amber' : 'green'));
   cards.push(`
     <div class="fc-kpi-card">
-      <div class="fc-kpi-icon ${colorFinal}">📈</div>
+      <div class="fc-kpi-icon ${clase}">⏳</div>
       <div class="fc-kpi-body">
-        <div class="fc-kpi-label">Saldo proyectado a ${fcHorizonteDias} días</div>
-        <div class="fc-kpi-value">${formatMonto(proy.saldoFinalArs)}</div>
-        <span class="fc-kpi-badge ${colorFinal}">al ${formatFechaObj(proy.hasta)}</span>
+        <div class="fc-kpi-label">Estimated Runway</div>
+        <div class="fc-kpi-value">${runway === null ? 'Sin datos de egresos' : runway.toFixed(1) + ' meses'}</div>
+        <div class="fc-kpi-sub">saldo actual / burn rate mensual</div>
       </div>
     </div>`);
-  const colorMin = proy.minSaldoArs < 0 ? 'orange' : (proy.minSaldoArs < (Number(flujoConfig.saldo_ars)||0) * 0.2 ? 'amber' : 'green');
+  $('fcRunwayKpis').innerHTML = cards.join('');
+}
+
+function renderFcRunwayGauge() {
+  const runway = calcularRunwayMeses();
+  const topeMeses = 12;
+  const pct = runway === null ? 0 : Math.max(0, Math.min(100, (runway / topeMeses) * 100));
+  const color = runway === null ? '#5C6B6E' : (runway < 1 ? '#C7431E' : (runway < 3 ? '#C98A1D' : '#2F8557'));
+  $('fcRunwayGauge').innerHTML = `
+    <div class="fc-gauge-track">
+      <div class="fc-gauge-fill" style="width:${pct}%;background:${color};"></div>
+    </div>
+    <div class="fc-gauge-marks"><span>0 meses</span><span>${topeMeses/2} meses</span><span>${topeMeses}+ meses</span></div>
+    <div class="fc-gauge-caption">${runway === null ? 'Todavía no hay suficientes egresos cargados para estimar el runway.' : `A este ritmo de gasto, la caja alcanza para <strong>${runway.toFixed(1)} meses</strong>.`}</div>`;
+}
+
+function renderFcBurnTrend() {
+  const trend = calcularBurnRateTrend();
+  const valores = trend.map(m => m.total);
+  const max = Math.max(...valores, 1);
+  const chartW = Math.max(360, trend.length * 60), chartH = 170, topPad = 20, botPad = 30, leftPad = 10, rightPad = 10;
+  const usableW = chartW - leftPad - rightPad, usableH = chartH - topPad - botPad;
+  const paso = usableW / Math.max(1, trend.length - 1);
+  const xFor = (i) => leftPad + i * paso;
+  const yFor = (v) => topPad + usableH - (v / max) * usableH;
+  const pts = trend.map((m,i) => `${xFor(i).toFixed(1)},${yFor(m.total).toFixed(1)}`).join(' ');
+
+  let svg = `<svg viewBox="0 0 ${chartW} ${chartH}" width="${chartW}" height="${chartH}" style="min-width:100%;">`;
+  svg += `<polyline points="${pts}" fill="none" stroke="#C7431E" stroke-width="2.5"/>`;
+  trend.forEach((m,i) => {
+    svg += `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(m.total).toFixed(1)}" r="3.5" fill="#C7431E"><title>${String(m.fecha.getMonth()+1).padStart(2,'0')}/${m.fecha.getFullYear()} — ${formatMonto(m.total)}</title></circle>`;
+    svg += `<text x="${xFor(i).toFixed(1)}" y="${chartH-10}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" fill="#5C6B6E">${String(m.fecha.getMonth()+1).padStart(2,'0')}/${String(m.fecha.getFullYear()).slice(2)}</text>`;
+  });
+  svg += `</svg>`;
+  $('fcBurnTrend').innerHTML = svg;
+}
+
+function renderFcRunwayTabla() {
+  const filas = calcularRunwayProyecciones().map(p => `
+    <tr>
+      <td>${escapeHtml(p.label)}</td>
+      <td>${p.burn > 0 ? formatMonto(p.burn) : 'Sin datos'}</td>
+      <td>${p.runway === null ? 'Sin datos' : p.runway.toFixed(1) + ' meses'}</td>
+    </tr>`).join('');
+  $('fcRunwayTabla').innerHTML = `
+    <table class="client-table" style="margin:0;">
+      <thead><tr><th>Escenario</th><th>Burn mensual</th><th>Runway</th></tr></thead>
+      <tbody>${filas}</tbody>
+    </table>`;
+}
+
+// --- 5. Operativo ---
+function renderFcOperativoKpis() {
+  const t = hoy();
+  const desdeMes = new Date(t.getFullYear(), t.getMonth(), 1);
+  const movsMes = calcularMovimientosHistoricos(desdeMes, t);
+  const inflowMes = movsMes.filter(m => m.monto > 0).reduce((s,m) => s + m.monto, 0);
+  const outflowMes = -movsMes.filter(m => m.monto < 0).reduce((s,m) => s + m.monto, 0);
+  const saldo = Number(flujoConfig.saldo_ars) || 0;
+
+  const cards = [];
   cards.push(`
     <div class="fc-kpi-card">
-      <div class="fc-kpi-icon ${colorMin}">⚠️</div>
+      <div class="fc-kpi-icon">💵</div>
       <div class="fc-kpi-body">
-        <div class="fc-kpi-label">Punto más bajo proyectado</div>
-        <div class="fc-kpi-value">${formatMonto(proy.minSaldoArs)}</div>
-        <span class="fc-kpi-badge ${colorMin}">${proy.minSaldoArs < 0 ? 'negativo el ' + formatFechaObj(proy.fechaMinArs) : 'el ' + formatFechaObj(proy.fechaMinArs)}</span>
+        <div class="fc-kpi-label">Daily Cash Balance</div>
+        <div class="fc-kpi-value">${formatMonto(saldo)}</div>
+        <div class="fc-kpi-sub">saldo actual en caja (ARS)</div>
       </div>
     </div>`);
-  $('fcStats').innerHTML = cards.join('');
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon green">⬆️</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Monthly Inflow</div>
+        <div class="fc-kpi-value">${formatMonto(inflowMes)}</div>
+        <div class="fc-kpi-sub">cobros reales del mes en curso</div>
+      </div>
+    </div>`);
+  cards.push(`
+    <div class="fc-kpi-card">
+      <div class="fc-kpi-icon orange">⬇️</div>
+      <div class="fc-kpi-body">
+        <div class="fc-kpi-label">Monthly Outflow</div>
+        <div class="fc-kpi-value">${formatMonto(outflowMes)}</div>
+        <div class="fc-kpi-sub">egresos reales del mes en curso</div>
+      </div>
+    </div>`);
+  $('fcOperativoKpis').innerHTML = cards.join('');
+}
+
+function renderFcLiquidityGauge() {
+  const score = calcularLiquidityHealth();
+  const color = score >= 65 ? '#2F8557' : (score >= 35 ? '#C98A1D' : '#C7431E');
+  const etiqueta = score >= 65 ? 'Saludable' : (score >= 35 ? 'Ajustada' : 'En riesgo');
+  $('fcLiquidityGauge').innerHTML = `
+    <div class="fc-gauge-track">
+      <div class="fc-gauge-fill" style="width:${score}%;background:${color};"></div>
+    </div>
+    <div class="fc-gauge-marks"><span>0</span><span>50</span><span>100</span></div>
+    <div class="fc-gauge-caption">Puntaje de liquidez: <strong>${score}/100 — ${etiqueta}</strong> (combina runway proyectado y % de facturas vencidas)</div>`;
+}
+
+function renderFcComboChart() {
+  const datos = calcularInflowOutflowDiario(7, 7);
+  const maxFlujo = Math.max(...datos.map(d => Math.max(d.inflow, d.outflow)), 1);
+  const saldos = datos.map(d => d.saldo);
+  const maxSaldo = Math.max(...saldos, 0), minSaldo = Math.min(...saldos, 0);
+  const rangoSaldo = (maxSaldo - minSaldo) || 1;
+
+  const chartW = Math.max(400, datos.length * 42), chartH = 200, topPad = 20, botPad = 32, leftPad = 10, rightPad = 10;
+  const usableW = chartW - leftPad - rightPad, usableH = chartH - topPad - botPad;
+  const paso = usableW / datos.length;
+  const barW = Math.min(14, paso * 0.32);
+
+  const yForFlujo = (v) => topPad + usableH - (v / maxFlujo) * (usableH * 0.55);
+  const baseYFlujo = topPad + usableH;
+  const yForSaldo = (v) => topPad + usableH - ((v - minSaldo) / rangoSaldo) * usableH;
+
+  let svg = `<svg viewBox="0 0 ${chartW} ${chartH}" width="${chartW}" height="${chartH}" style="min-width:100%;">`;
+  datos.forEach((d, i) => {
+    const xCenter = leftPad + i * paso + paso / 2;
+    if (d.inflow > 0) {
+      const h = baseYFlujo - yForFlujo(d.inflow);
+      svg += `<rect x="${(xCenter - barW - 1).toFixed(1)}" y="${yForFlujo(d.inflow).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="#2F8557" rx="2"><title>Entrada ${formatFechaObj(d.fecha)}: ${formatMonto(d.inflow)}</title></rect>`;
+    }
+    if (d.outflow > 0) {
+      const h = baseYFlujo - yForFlujo(d.outflow);
+      svg += `<rect x="${(xCenter + 1).toFixed(1)}" y="${yForFlujo(d.outflow).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="#C7431E" rx="2"><title>Salida ${formatFechaObj(d.fecha)}: ${formatMonto(d.outflow)}</title></rect>`;
+    }
+    svg += `<text x="${xCenter.toFixed(1)}" y="${chartH-10}" text-anchor="middle" font-family="Inter, sans-serif" font-size="8.5" fill="#5C6B6E">${String(d.fecha.getDate()).padStart(2,'0')}/${String(d.fecha.getMonth()+1).padStart(2,'0')}</text>`;
+  });
+  const lineaSaldo = datos.map((d,i) => `${(leftPad + i*paso + paso/2).toFixed(1)},${yForSaldo(d.saldo).toFixed(1)}`).join(' ');
+  svg += `<polyline points="${lineaSaldo}" fill="none" stroke="#034AA6" stroke-width="2.5"/>`;
+  svg += `</svg>`;
+  svg += `<div style="display:flex;gap:16px;margin-top:4px;font-family:var(--font-body);font-size:11px;color:var(--text-muted);">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#2F8557;margin-right:5px;"></span>Ingresos</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#C7431E;margin-right:5px;"></span>Egresos</span>
+    <span><span style="display:inline-block;width:10px;height:2px;background:#034AA6;margin-right:5px;vertical-align:middle;"></span>Saldo acumulado</span>
+  </div>`;
+  $('fcComboChart').innerHTML = svg;
 }
 
 function renderFcSemaforo() {
@@ -5313,41 +6047,6 @@ function renderFcSemaforo() {
       </div>
       <div class="fc-alert-value">${formatMonto(saldoEnFecha)} <span style="font-family:var(--font-body);font-size:11.5px;font-weight:400;color:var(--text-muted);">vs. ${formatMonto(montoNomina)} necesarios</span></div>
     </div>`;
-}
-
-function renderFcChart() {
-  const proy = calcularProyeccionFlujo(fcHorizonteDias);
-  const puntos = proy.puntos;
-  if (puntos.length < 1) { $('fcChart').innerHTML = ''; return; }
-
-  const valores = puntos.map(p => p.saldo);
-  const max = Math.max(...valores, 0);
-  const min = Math.min(...valores, 0);
-  const rango = (max - min) || 1;
-
-  const chartW = Math.max(400, puntos.length * 40);
-  const chartH = 180, topPad = 20, botPad = 30, leftPad = 10, rightPad = 10;
-  const usableH = chartH - topPad - botPad;
-  const t0 = puntos[0].fecha.getTime();
-  const tSpan = (puntos[puntos.length - 1].fecha.getTime() - t0) || 1;
-  const usableW = chartW - leftPad - rightPad;
-
-  const xFor = (p) => leftPad + ((p.fecha.getTime() - t0) / tSpan) * usableW;
-  const yFor = (v) => topPad + usableH - ((v - min) / rango) * usableH;
-  const yZero = yFor(0);
-
-  let path = puntos.map((p,i) => `${i===0?'M':'L'} ${xFor(p).toFixed(1)} ${yFor(p.saldo).toFixed(1)}`).join(' ');
-
-  let svg = `<svg viewBox="0 0 ${chartW} ${chartH}" width="${chartW}" height="${chartH}" style="min-width:100%;">`;
-  svg += `<line x1="${leftPad}" y1="${yZero}" x2="${chartW-rightPad}" y2="${yZero}" stroke="#D3D8D7" stroke-width="1" stroke-dasharray="4,3"/>`;
-  svg += `<path d="${path}" fill="none" stroke="#2B6E7E" stroke-width="2.5"/>`;
-  puntos.forEach(p => {
-    const color = p.saldo < 0 ? '#C7431E' : '#2B6E7E';
-    svg += `<circle cx="${xFor(p).toFixed(1)}" cy="${yFor(p.saldo).toFixed(1)}" r="3.5" fill="${color}">`;
-    svg += `<title>${formatFechaObj(p.fecha)} — ${p.detalle}: ${formatMonto(p.saldo)}</title></circle>`;
-  });
-  svg += `</svg>`;
-  $('fcChart').innerHTML = svg;
 }
 
 function renderFcEscenariosChart() {
@@ -5378,7 +6077,13 @@ function renderFcEscenariosChart() {
   const pathOpt = puntosOpt.map((p,i) => `${i===0?'M':'L'} ${xFor(p).toFixed(1)} ${yFor(p.saldo).toFixed(1)}`).join(' ');
   const pathPes = puntosPes.map((p,i) => `${i===0?'M':'L'} ${xFor(p).toFixed(1)} ${yFor(p.saldo).toFixed(1)}`).join(' ');
 
+  const bandaPts = [
+    ...puntosOpt.map(p => `${xFor(p).toFixed(1)},${yFor(p.saldo).toFixed(1)}`),
+    ...puntosPes.slice().reverse().map(p => `${xFor(p).toFixed(1)},${yFor(p.saldo).toFixed(1)}`)
+  ].join(' ');
+
   let svg = `<svg viewBox="0 0 ${chartW} ${chartH}" width="${chartW}" height="${chartH}" style="min-width:100%;">`;
+  svg += `<polygon points="${bandaPts}" fill="#034AA6" fill-opacity="0.08"/>`;
   svg += `<line x1="${leftPad}" y1="${yZero}" x2="${chartW-rightPad}" y2="${yZero}" stroke="#D3D8D7" stroke-width="1" stroke-dasharray="4,3"/>`;
   svg += `<path d="${pathPes}" fill="none" stroke="#C7431E" stroke-width="2.5"/>`;
   svg += `<path d="${pathOpt}" fill="none" stroke="#2F8557" stroke-width="2.5"/>`;
@@ -5434,6 +6139,7 @@ function renderFcEscenariosStats() {
 function renderFcEscenarios() {
   renderFcEscenariosChart();
   renderFcEscenariosStats();
+  renderFcEscenariosKpis();
 }
 
 function renderFcTablaProyeccion() {
@@ -5563,18 +6269,35 @@ function renderFlujoCaja() {
   $('fc_saldo_ars').value = flujoConfig.saldo_ars || '';
   $('fc_saldo_usd').value = flujoConfig.saldo_usd || '';
   $('fc_saldo_fecha').value = flujoConfig.saldo_fecha || '';
+  $('fc_deuda_total').value = flujoConfig.deuda_total || '';
   $('fc_nomina_monto').value = flujoConfig.nomina_monto || '';
   $('fc_nomina_fecha').value = flujoConfig.nomina_fecha || '';
 
-  renderFcStats();
   renderFcSemaforo();
   renderFcProximosPagos();
   renderFcWaterfall();
-  renderFcChart();
   renderFcTablaProyeccion();
   renderFcAgingCobrar();
   renderFcAgingPagar();
   renderFcEscenarios();
+
+  renderFcResumenKpis();
+  renderFcNetCashTrend();
+  renderFcResumenSparklines();
+
+  renderFcCobrarPagarKpis();
+  renderFcDonutCobrarPagar();
+  renderFcTopDeudores();
+
+  renderFcRunwayKpis();
+  renderFcRunwayGauge();
+  renderFcBurnTrend();
+  renderFcRunwayTabla();
+
+  renderFcOperativoKpis();
+  renderFcLiquidityGauge();
+  renderFcComboChart();
+
   renderEgresos();
 }
 
@@ -5582,6 +6305,7 @@ async function guardarFlujoConfigDesdeForm() {
   flujoConfig.saldo_ars = parseFloat($('fc_saldo_ars').value) || 0;
   flujoConfig.saldo_usd = parseFloat($('fc_saldo_usd').value) || 0;
   flujoConfig.saldo_fecha = $('fc_saldo_fecha').value || null;
+  flujoConfig.deuda_total = parseFloat($('fc_deuda_total').value) || 0;
   flujoConfig.nomina_monto = parseFloat($('fc_nomina_monto').value) || 0;
   flujoConfig.nomina_fecha = $('fc_nomina_fecha').value || null;
   await guardarFlujoConfigEnStorage();
@@ -6632,7 +7356,7 @@ function activarSincronizacionEnVivo() {
   window.storage.watch('flujo_config', (value) => {
     if (value == null) return;
     try {
-      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null}, JSON.parse(value));
+      flujoConfig = Object.assign({saldo_ars: 0, saldo_usd: 0, saldo_fecha: null, nomina_monto: 0, nomina_fecha: null, deuda_total: 0}, JSON.parse(value));
       refreshTodasLasVistas();
     } catch (e) { /* noop */ }
   });
