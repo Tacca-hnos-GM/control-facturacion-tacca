@@ -2287,6 +2287,7 @@
       <span class="rev-subnav-link" data-target="panel-evolucion">Evolución mensual</span>
       <span class="rev-subnav-link" data-target="panel-por-cliente">Por cliente</span>
       <span class="rev-subnav-link" data-target="panel-top-productos">Top productos</span>
+      <span class="rev-subnav-link" data-target="panel-pagos-hoy">🔎 Pagos cargados hoy</span>
     </div>
 
     <div class="rev-panel" id="panel-dashboard">
@@ -2450,6 +2451,27 @@
             <tr><th>#</th><th>Producto</th><th>Cantidad vendida</th><th>% del total</th><th>Facturas</th></tr>
           </thead>
           <tbody id="topProductosBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="rev-panel" id="panel-pagos-hoy" style="display:none;">
+      <div class="client-card" id="rev-pagos-hoy">
+        <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>🔎 Pagos cargados el <span id="ph_fecha_label"></span></span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="date" id="ph_fecha">
+            <button class="ghost" id="btnPagosHoyHoy">Hoy</button>
+          </div>
+        </div>
+        <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:-4px 0 12px;">
+          Pagos agrupados por cliente y monto para detectar cargas duplicadas. Esto filtra por la <b>fecha del pago</b> (la que se pone al registrarlo), no por el momento en que se tipeó en el sistema. <b>Importante:</b> si un pago queda con fecha de hoy pero en realidad se cargó otro día (por ej. una carga atrasada o adelantada), igual va a aparecer acá; y si hoy cargás un pago con una fecha distinta a hoy (por ej. estás poniendo al día un pago viejo), ese no va a aparecer en esta lista aunque lo hayas cargado en este momento.
+        </p>
+        <table class="client-table">
+          <thead>
+            <tr><th>Cliente</th><th>Factura</th><th>Monto</th><th>Fecha del pago</th><th>Método</th><th>Cargado el</th><th></th></tr>
+          </thead>
+          <tbody id="pagosHoyBody"></tbody>
         </table>
       </div>
     </div>
@@ -3625,7 +3647,7 @@ async function marcarPagado(id) {
   const saldo = saldoPendiente(v);
   if (saldo <= 0) return;
   if (!v.pagos) v.pagos = [];
-  v.pagos.push({monto: saldo, fecha: toISODate(new Date()), nota: 'Pago total'});
+  v.pagos.push({monto: saldo, fecha: toISODate(new Date()), nota: 'Pago total', creado_en: new Date().toISOString()});
   v.estado = 'pagado';
   v.fecha_pago = toISODate(new Date());
   await guardarEnStorage();
@@ -3894,7 +3916,8 @@ async function guardarPago() {
           monto: Math.round(aplicar * 100) / 100,
           fecha: chunk.fecha,
           fecha_cobro: chunk.fecha_cobro || null,
-          nota: chunk.fecha_cobro ? `Cheque, se deposita el ${formatFecha(chunk.fecha_cobro)}` : (chunk.origenSaldoFavor ? 'Pagado con saldo a favor' : '')
+          nota: chunk.fecha_cobro ? `Cheque, se deposita el ${formatFecha(chunk.fecha_cobro)}` : (chunk.origenSaldoFavor ? 'Pagado con saldo a favor' : ''),
+          creado_en: new Date().toISOString()
         });
         saldoFactura -= aplicar;
         restanteChunk = Math.round((restanteChunk - aplicar) * 100) / 100;
@@ -4104,6 +4127,75 @@ function renderRevision() {
   renderVentaObjetivoRanking();
   renderTopProductos();
   renderDashboard();
+  renderPagosCargadosHoy();
+}
+
+function metodoPagoRegistro(p, v) {
+  if (p.fecha_cobro) return 'Cheque';
+  if ((p.nota || '').includes('saldo a favor')) return 'Saldo a favor';
+  return v.metodo || '—';
+}
+
+function renderPagosCargadosHoy() {
+  if (!$('ph_fecha').value) $('ph_fecha').value = toISODate(new Date());
+  const fechaSel = $('ph_fecha').value;
+  $('ph_fecha_label').textContent = formatFecha(fechaSel);
+
+  const lista = [];
+  ventas.forEach(v => {
+    (v.pagos || []).forEach((p, idx) => {
+      if (!p.fecha) return;
+      if (p.fecha !== fechaSel) return;
+      lista.push({
+        ventaId: v.id,
+        pagoIndex: idx,
+        cliente: v.cliente,
+        factura: v.factura,
+        monto: Number(p.monto),
+        fecha: p.fecha,
+        metodo: metodoPagoRegistro(p, v),
+        creado_en: p.creado_en || null
+      });
+    });
+  });
+
+  lista.sort((a,b) => a.cliente.localeCompare(b.cliente) || b.monto - a.monto);
+
+  if (lista.length === 0) {
+    $('pagosHoyBody').innerHTML = `<tr><td colspan="7" style="font-family:var(--font-body);color:var(--text-muted);text-align:center;padding:1.5rem 0;">No hay pagos con fecha ${formatFecha(fechaSel)}.</td></tr>`;
+    return;
+  }
+
+  $('pagosHoyBody').innerHTML = lista.map(p => `
+    <tr>
+      <td class="nombre">${escapeHtml(p.cliente)}</td>
+      <td>${escapeHtml(p.factura)}</td>
+      <td>${formatMonto(p.monto)}</td>
+      <td>${formatFecha(p.fecha)}</td>
+      <td>${escapeHtml(p.metodo)}</td>
+      <td>${p.creado_en ? formatFechaHora(p.creado_en) : '—'}</td>
+      <td><button class="pago-item-del" onclick="eliminarPagoRegistrado('${p.ventaId}', ${p.pagoIndex})" title="Eliminar pago">✕</button></td>
+    </tr>`).join('');
+}
+
+async function eliminarPagoRegistrado(ventaId, pagoIndex) {
+  const v = ventas.find(x => x.id === ventaId);
+  if (!v || !v.pagos || !v.pagos[pagoIndex]) return;
+  const ok = await confirmarAccion('¿Eliminar este pago? Esta acción no se puede deshacer.');
+  if (!ok) return;
+  v.pagos.splice(pagoIndex, 1);
+  const pagadoTotal = montoPagado(v);
+  if (pagadoTotal >= Number(v.monto) - 0.01) {
+    v.estado = 'pagado';
+    if (!v.fecha_pago) v.fecha_pago = toISODate(new Date());
+  } else if (pagadoTotal > 0) {
+    v.estado = 'parcial';
+  } else {
+    v.estado = 'pendiente';
+    v.fecha_pago = null;
+  }
+  await guardarEnStorage();
+  refreshTodasLasVistas();
 }
 
 function renderChart(actual, previo) {
@@ -4300,6 +4392,12 @@ $('revSubnav').addEventListener('click', (e) => {
   document.querySelectorAll('#viewRevision .rev-panel').forEach(panel => { panel.style.display = 'none'; });
   const destino = $(e.target.dataset.target);
   if (destino) destino.style.display = '';
+});
+
+$('ph_fecha').addEventListener('change', renderPagosCargadosHoy);
+$('btnPagosHoyHoy').addEventListener('click', () => {
+  $('ph_fecha').value = toISODate(new Date());
+  renderPagosCargadosHoy();
 });
 
 $('btnAplicarRango').addEventListener('click', () => {
