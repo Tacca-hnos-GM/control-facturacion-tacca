@@ -3300,6 +3300,22 @@ function toggleVentaPedidoLink(pedidoId, checked) {
   renderItemsProductos();
 }
 
+function productosRestantesPedido(pedido) {
+  // Lo que queda por facturar de un pedido según las filas cargadas en el formulario de venta
+  const restantes = [];
+  pedido.productos.forEach((itemPedido, idx) => {
+    const filasVenta = itemsProductosForm.filter(it => it.origenPedidoId === pedido.id && it.origenPedidoIdx === idx);
+    const facturado = filasVenta.reduce((s, it) => {
+      const c = it.cantidad === '' || it.cantidad == null ? 0 : parseFloat(it.cantidad);
+      return s + (isNaN(c) ? 0 : c);
+    }, 0);
+    const pedida = itemPedido.cantidad || 0;
+    const restante = Math.max(0, Math.round((pedida - facturado) * 100) / 100);
+    if (restante > 0) restantes.push({producto: itemPedido.producto, cantidad: restante});
+  });
+  return restantes;
+}
+
 async function reconciliarPedidosVinculados() {
   const pedidosAfectados = new Set(itemsProductosForm.filter(it => it.origenPedidoId).map(it => it.origenPedidoId));
   if (pedidosAfectados.size === 0) return;
@@ -3307,19 +3323,7 @@ async function reconciliarPedidosVinculados() {
   pedidosAfectados.forEach(pedidoId => {
     const pedido = pedidosPendientes.find(p => p.id === pedidoId);
     if (!pedido) return;
-    const nuevosProductos = [];
-    pedido.productos.forEach((itemPedido, idx) => {
-      const filasVenta = itemsProductosForm.filter(it => it.origenPedidoId === pedidoId && it.origenPedidoIdx === idx);
-      const facturado = filasVenta.reduce((s, it) => {
-        const c = it.cantidad === '' || it.cantidad == null ? 0 : parseFloat(it.cantidad);
-        return s + (isNaN(c) ? 0 : c);
-      }, 0);
-      const pedida = itemPedido.cantidad || 0;
-      const restante = Math.max(0, Math.round((pedida - facturado) * 100) / 100);
-      if (restante > 0) {
-        nuevosProductos.push({producto: itemPedido.producto, cantidad: restante});
-      }
-    });
+    const nuevosProductos = productosRestantesPedido(pedido);
     if (nuevosProductos.length === 0) {
       pedidosPendientes = pedidosPendientes.filter(p => p.id !== pedidoId);
     } else {
@@ -3608,7 +3612,7 @@ async function guardarVenta() {
   const pedidosOrigen = sinPedidoUrgencia ? [] : Array.from(pedidosVinculadosVentaForm)
     .map(pid => pedidosPendientes.find(p => p.id === pid))
     .filter(Boolean)
-    .map(p => ({id: p.id, numero: p.numero || '', fecha: p.fecha}));
+    .map(p => ({id: p.id, numero: p.numero || '', fecha: p.fecha, completo: productosRestantesPedido(p).length === 0}));
 
   if (editandoId) {
     const v = ventas.find(x => x.id === editandoId);
@@ -4092,7 +4096,7 @@ function entregasDelPeriodo(desde, hasta) {
     }
     (v.pedidos_origen || []).forEach(o => {
       const d = diasEntreFechas(o.fecha, v.fecha_venta);
-      if (d !== null) entregas.push({dias: Math.max(0, d), urgente: false});
+      if (d !== null) entregas.push({dias: Math.max(0, d), urgente: false, parcial: o.completo === false});
     });
   });
   // Pedidos marcados como facturados a mano (sin venta vinculada)
@@ -4100,20 +4104,22 @@ function entregasDelPeriodo(desde, hasta) {
     if (!p.facturado || !p.fecha_facturado || idsEnVentas.has(p.id)) return;
     if (!enRango(p.fecha_facturado, desde, hasta)) return;
     const d = diasEntreFechas(p.fecha, p.fecha_facturado);
-    if (d !== null) entregas.push({dias: Math.max(0, d), urgente: false});
+    if (d !== null) entregas.push({dias: Math.max(0, d), urgente: false, parcial: false});
   });
   return entregas;
 }
 
 function promedioEntrega(desde, hasta) {
   const todas = entregasDelPeriodo(desde, hasta);
-  // El promedio se calcula solo con entregas que tuvieron pedido real: las urgentes (0 días) lo falsearían
-  const e = todas.filter(x => !x.urgente);
-  const total = e.reduce((s, x) => s + x.dias, 0);
+  // Las urgentes (0 días) quedan fuera de los promedios: los falsearían
+  const prom = (arr) => arr.length ? arr.reduce((s, x) => s + x.dias, 0) / arr.length : null;
+  const parciales = todas.filter(x => !x.urgente && x.parcial);
+  const completas = todas.filter(x => !x.urgente && !x.parcial);
+  const urgentes = todas.filter(x => x.urgente).length;
   return {
-    promedio: e.length ? total / e.length : null,
-    cantidad: e.length,
-    urgentes: todas.length - e.length,
+    parcial: {promedio: prom(parciales), cantidad: parciales.length},
+    completo: {promedio: prom(completas), cantidad: completas.length},
+    urgentes,
     totalEntregas: todas.length
   };
 }
@@ -4177,12 +4183,19 @@ function renderRevision() {
       <div class="value">${formatMonto(pendienteActual)}</div>
       <div class="sub">Total sin cobrar, sin importar el período</div>
     </div>
-    <div class="stat" id="statTiempoEntrega">
-      <div class="label">Tiempo promedio de entrega</div>
-      <div class="value">${formatDiasEntrega(entregaActual.promedio)}</div>
-      <div class="sub">${entregaActual.cantidad === 0
-        ? 'Sin entregas con fecha de pedido en el período'
-        : `${entregaActual.cantidad} entrega${entregaActual.cantidad === 1 ? '' : 's'} con pedido (sin urgencias) · anterior: ${formatDiasEntrega(entregaPrevia.promedio)}`}</div>
+    <div class="stat" id="statEntregaParcial">
+      <div class="label">Tiempo promedio de entrega parcial</div>
+      <div class="value">${formatDiasEntrega(entregaActual.parcial.promedio)}</div>
+      <div class="sub">${entregaActual.parcial.cantidad === 0
+        ? 'Sin entregas parciales en el período'
+        : `${entregaActual.parcial.cantidad} entrega${entregaActual.parcial.cantidad === 1 ? '' : 's'} (queda saldo del pedido) · anterior: ${formatDiasEntrega(entregaPrevia.parcial.promedio)}`}</div>
+    </div>
+    <div class="stat" id="statEntregaCompleta">
+      <div class="label">Tiempo promedio de entrega completo</div>
+      <div class="value">${formatDiasEntrega(entregaActual.completo.promedio)}</div>
+      <div class="sub">${entregaActual.completo.cantidad === 0
+        ? 'Sin entregas completas en el período'
+        : `${entregaActual.completo.cantidad} entrega${entregaActual.completo.cantidad === 1 ? '' : 's'} (pedido cerrado) · anterior: ${formatDiasEntrega(entregaPrevia.completo.promedio)}`}</div>
     </div>
     <div class="stat" id="statPedidosUrgencia">
       <div class="label">Facturas sin pedido por urgencia</div>
