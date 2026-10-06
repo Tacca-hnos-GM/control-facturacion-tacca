@@ -1869,6 +1869,12 @@
         <input type="number" id="f_monto" placeholder="0" min="0" step="0.01">
       </div>
       <datalist id="listaProductos"></datalist>
+      <div class="field full">
+        <label class="factura-check-row" style="cursor:pointer;">
+          <input type="checkbox" id="f_sin_pedido_urgencia" onchange="toggleSinPedidoUrgencia(this.checked)">
+          <span><b>Factura sin pedido por urgencia</b> — hizo el pedido hoy y hoy mismo se lleva la mercadería (entrega = 0 días)</span>
+        </label>
+      </div>
       <div id="ventaPedidosField" class="field full" style="display:none;">
         <label>Pedidos de este cliente (opcional — marcá los que cubre esta factura)</label>
         <div id="ventaPedidosChecklist"></div>
@@ -3239,7 +3245,7 @@ function productosResumen(v) {
 
 function renderPedidosChecklistVenta() {
   const nombre = $('f_cliente').value.trim();
-  if (!nombre) {
+  if (!nombre || $('f_sin_pedido_urgencia').checked) {
     $('ventaPedidosField').style.display = 'none';
     $('ventaPedidosChecklist').innerHTML = '';
     return;
@@ -3256,6 +3262,17 @@ function renderPedidosChecklistVenta() {
       <input type="checkbox" ${pedidosVinculadosVentaForm.has(p.id) ? 'checked' : ''} onchange="toggleVentaPedidoLink('${p.id}', this.checked)">
       <span>${p.numero ? 'N° ' + escapeHtml(p.numero) + ' — ' : ''}${formatFecha(p.fecha)} — ${escapeHtml(productosResumen(p))} (${cantidadTotalPedido(p)} ítems)</span>
     </label>`).join('')}</div>`;
+}
+
+function toggleSinPedidoUrgencia(checked) {
+  if (checked) {
+    // Se desvinculan los pedidos tildados: una factura urgente no tiene pedido previo
+    itemsProductosForm = itemsProductosForm.filter(it => !it.origenPedidoId);
+    if (itemsProductosForm.length === 0) itemsProductosForm.push({producto: '', cantidad: ''});
+    pedidosVinculadosVentaForm = new Set();
+    renderItemsProductos();
+  }
+  renderPedidosChecklistVenta();
 }
 
 function toggleVentaPedidoLink(pedidoId, checked) {
@@ -3524,6 +3541,7 @@ function abrirFormulario() {
   $('f_factura').value = '';
   $('f_monto').value = '';
   pedidosVinculadosVentaForm = new Set();
+  $('f_sin_pedido_urgencia').checked = false;
   $('ventaPedidosField').style.display = 'none';
   $('ventaPedidosChecklist').innerHTML = '';
   itemsProductosForm = [{producto: '', cantidad: ''}];
@@ -3552,6 +3570,7 @@ function editarVenta(id) {
   $('f_factura').value = v.factura;
   $('f_monto').value = v.monto;
   pedidosVinculadosVentaForm = new Set();
+  $('f_sin_pedido_urgencia').checked = !!v.sin_pedido_urgencia;
   $('ventaPedidosField').style.display = 'none';
   $('ventaPedidosChecklist').innerHTML = '';
   itemsProductosForm = itemsProductosDesdeVenta(v);
@@ -3584,6 +3603,12 @@ async function guardarVenta() {
     .filter(it => it.producto !== '');
 
   const esNueva = !editandoId;
+  const sinPedidoUrgencia = $('f_sin_pedido_urgencia').checked;
+  // Se guarda la fecha del pedido en la propia venta: al facturarse completo el pedido se borra de Pendientes
+  const pedidosOrigen = sinPedidoUrgencia ? [] : Array.from(pedidosVinculadosVentaForm)
+    .map(pid => pedidosPendientes.find(p => p.id === pid))
+    .filter(Boolean)
+    .map(p => ({id: p.id, numero: p.numero || '', fecha: p.fecha}));
 
   if (editandoId) {
     const v = ventas.find(x => x.id === editandoId);
@@ -3592,7 +3617,8 @@ async function guardarVenta() {
       productos: productosFinal,
       condicion: $('f_condicion').value,
       metodo: $('f_metodo').value,
-      notas: $('f_notas').value.trim()
+      notas: $('f_notas').value.trim(),
+      sin_pedido_urgencia: sinPedidoUrgencia
     });
     delete v.producto;
     delete v.cantidad;
@@ -3608,7 +3634,9 @@ async function guardarVenta() {
       fecha_pago: null,
       pagos: [],
       gestiones: [],
-      pedidos_vinculados: Array.from(pedidosVinculadosVentaForm)
+      pedidos_vinculados: Array.from(pedidosVinculadosVentaForm),
+      pedidos_origen: pedidosOrigen,
+      sin_pedido_urgencia: sinPedidoUrgencia
     });
   }
 
@@ -4044,6 +4072,58 @@ function metricasPeriodo(desde, hasta) {
   return {vendido, cobrado, cantidadVendidas: vendidas.length};
 }
 
+function diasEntreFechas(desdeStr, hastaStr) {
+  // Diferencia en días entre dos YYYY-MM-DD, calculada en UTC para evitar corrimientos horarios
+  const a = String(desdeStr).split('-').map(Number);
+  const b = String(hastaStr).split('-').map(Number);
+  if (a.length < 3 || b.length < 3 || a.some(isNaN) || b.some(isNaN)) return null;
+  return Math.round((Date.UTC(b[0], b[1]-1, b[2]) - Date.UTC(a[0], a[1]-1, a[2])) / 86400000);
+}
+
+function entregasDelPeriodo(desde, hasta) {
+  const entregas = [];
+  const idsEnVentas = new Set();
+  ventas.forEach(v => {
+    (v.pedidos_origen || []).forEach(o => idsEnVentas.add(o.id));
+    if (!enRango(v.fecha_venta, desde, hasta)) return;
+    if (v.sin_pedido_urgencia) {
+      entregas.push({dias: 0, urgente: true});
+      return;
+    }
+    (v.pedidos_origen || []).forEach(o => {
+      const d = diasEntreFechas(o.fecha, v.fecha_venta);
+      if (d !== null) entregas.push({dias: Math.max(0, d), urgente: false});
+    });
+  });
+  // Pedidos marcados como facturados a mano (sin venta vinculada)
+  pedidosPendientes.forEach(p => {
+    if (!p.facturado || !p.fecha_facturado || idsEnVentas.has(p.id)) return;
+    if (!enRango(p.fecha_facturado, desde, hasta)) return;
+    const d = diasEntreFechas(p.fecha, p.fecha_facturado);
+    if (d !== null) entregas.push({dias: Math.max(0, d), urgente: false});
+  });
+  return entregas;
+}
+
+function promedioEntrega(desde, hasta) {
+  const todas = entregasDelPeriodo(desde, hasta);
+  // El promedio se calcula solo con entregas que tuvieron pedido real: las urgentes (0 días) lo falsearían
+  const e = todas.filter(x => !x.urgente);
+  const total = e.reduce((s, x) => s + x.dias, 0);
+  return {
+    promedio: e.length ? total / e.length : null,
+    cantidad: e.length,
+    urgentes: todas.length - e.length,
+    totalEntregas: todas.length
+  };
+}
+
+function formatDiasEntrega(n) {
+  if (n === null) return '—';
+  const t = (Math.round(n * 10) / 10).toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 1});
+  return t + (Math.round(n * 10) / 10 === 1 ? ' día' : ' días');
+}
+
 function deltaHTML(actual, previo) {
   if (previo === 0) {
     if (actual === 0) return `<div class="metric-delta flat">Sin cambios</div>`;
@@ -4078,6 +4158,8 @@ function renderRevision() {
   const prevRango = rangoActual ? rangoAnterior(desde, hasta) : rangoAnteriorSegunModo(desde, hasta, periodMode);
   const previo = metricasPeriodo(prevRango.desde, prevRango.hasta);
   const pendienteActual = ventas.filter(v => v.estado !== 'pagado').reduce((s,v) => s + saldoPendiente(v), 0);
+  const entregaActual = promedioEntrega(desde, hasta);
+  const entregaPrevia = promedioEntrega(prevRango.desde, prevRango.hasta);
 
   $('revStats').innerHTML = `
     <div class="stat">
@@ -4094,6 +4176,20 @@ function renderRevision() {
       <div class="label">Pendiente actual (a hoy)</div>
       <div class="value">${formatMonto(pendienteActual)}</div>
       <div class="sub">Total sin cobrar, sin importar el período</div>
+    </div>
+    <div class="stat" id="statTiempoEntrega">
+      <div class="label">Tiempo promedio de entrega</div>
+      <div class="value">${formatDiasEntrega(entregaActual.promedio)}</div>
+      <div class="sub">${entregaActual.cantidad === 0
+        ? 'Sin entregas con fecha de pedido en el período'
+        : `${entregaActual.cantidad} entrega${entregaActual.cantidad === 1 ? '' : 's'} con pedido (sin urgencias) · anterior: ${formatDiasEntrega(entregaPrevia.promedio)}`}</div>
+    </div>
+    <div class="stat" id="statPedidosUrgencia">
+      <div class="label">Facturas sin pedido por urgencia</div>
+      <div class="value">${entregaActual.urgentes}</div>
+      <div class="sub">${entregaActual.totalEntregas === 0
+        ? 'Sin entregas en el período'
+        : `${Math.round(entregaActual.urgentes / entregaActual.totalEntregas * 100)}% del total de entregas · anterior: ${entregaPrevia.urgentes}`}</div>
     </div>
   `;
 
