@@ -2342,6 +2342,33 @@
         </div>
       </div>
 
+      <div class="dash-kpi-row">
+        <div class="dash-kpi-card" id="statEntregaParcial">
+          <div class="dash-kpi-header">
+            <span class="dash-kpi-title">Entrega parcial (promedio)</span>
+            <span class="dash-kpi-icon" style="background:var(--amber-bg);color:var(--amber);">🚚</span>
+          </div>
+          <div class="dash-kpi-value" id="dashKpiEntParcial">—</div>
+          <div class="dash-kpi-delta" id="dashKpiEntParcialSub"></div>
+        </div>
+        <div class="dash-kpi-card" id="statEntregaCompleta">
+          <div class="dash-kpi-header">
+            <span class="dash-kpi-title">Entrega completa (promedio)</span>
+            <span class="dash-kpi-icon" style="background:var(--green-bg);color:var(--green);">📦</span>
+          </div>
+          <div class="dash-kpi-value" id="dashKpiEntCompleta">—</div>
+          <div class="dash-kpi-delta" id="dashKpiEntCompletaSub"></div>
+        </div>
+        <div class="dash-kpi-card" id="statPedidosUrgencia">
+          <div class="dash-kpi-header">
+            <span class="dash-kpi-title">Facturas por urgencia</span>
+            <span class="dash-kpi-icon" style="background:var(--orange-bg);color:var(--orange);">⚡</span>
+          </div>
+          <div class="dash-kpi-value" id="dashKpiUrgencia">—</div>
+          <div class="dash-kpi-delta" id="dashKpiUrgenciaSub"></div>
+        </div>
+      </div>
+
       <div class="dash-grid">
         <div class="chart-card dash-goal-card">
           <div class="chart-title">Objetivo del mes</div>
@@ -4164,8 +4191,6 @@ function renderRevision() {
   const prevRango = rangoActual ? rangoAnterior(desde, hasta) : rangoAnteriorSegunModo(desde, hasta, periodMode);
   const previo = metricasPeriodo(prevRango.desde, prevRango.hasta);
   const pendienteActual = ventas.filter(v => v.estado !== 'pagado').reduce((s,v) => s + saldoPendiente(v), 0);
-  const entregaActual = promedioEntrega(desde, hasta);
-  const entregaPrevia = promedioEntrega(prevRango.desde, prevRango.hasta);
 
   $('revStats').innerHTML = `
     <div class="stat">
@@ -4182,27 +4207,6 @@ function renderRevision() {
       <div class="label">Pendiente actual (a hoy)</div>
       <div class="value">${formatMonto(pendienteActual)}</div>
       <div class="sub">Total sin cobrar, sin importar el período</div>
-    </div>
-    <div class="stat" id="statEntregaParcial">
-      <div class="label">Tiempo promedio de entrega parcial</div>
-      <div class="value">${formatDiasEntrega(entregaActual.parcial.promedio)}</div>
-      <div class="sub">${entregaActual.parcial.cantidad === 0
-        ? 'Sin entregas parciales en el período'
-        : `${entregaActual.parcial.cantidad} entrega${entregaActual.parcial.cantidad === 1 ? '' : 's'} (queda saldo del pedido) · anterior: ${formatDiasEntrega(entregaPrevia.parcial.promedio)}`}</div>
-    </div>
-    <div class="stat" id="statEntregaCompleta">
-      <div class="label">Tiempo promedio de entrega completo</div>
-      <div class="value">${formatDiasEntrega(entregaActual.completo.promedio)}</div>
-      <div class="sub">${entregaActual.completo.cantidad === 0
-        ? 'Sin entregas completas en el período'
-        : `${entregaActual.completo.cantidad} entrega${entregaActual.completo.cantidad === 1 ? '' : 's'} (pedido cerrado) · anterior: ${formatDiasEntrega(entregaPrevia.completo.promedio)}`}</div>
-    </div>
-    <div class="stat" id="statPedidosUrgencia">
-      <div class="label">Facturas sin pedido por urgencia</div>
-      <div class="value">${entregaActual.urgentes}</div>
-      <div class="sub">${entregaActual.totalEntregas === 0
-        ? 'Sin entregas en el período'
-        : `${Math.round(entregaActual.urgentes / entregaActual.totalEntregas * 100)}% del total de entregas · anterior: ${entregaPrevia.urgentes}`}</div>
     </div>
   `;
 
@@ -6621,10 +6625,33 @@ function renderDashboard() {
   aplicarKPI('dashKpiCobrado', 'dashKpiCobradoDelta', kpis.cobrado.actual, kpis.cobrado.anterior, true);
   aplicarKPI('dashKpiClientes', 'dashKpiClientesDelta', kpis.clientes.actual, kpis.clientes.anterior, false);
 
+  renderDashEntregas();
   renderDashInsights();
   renderDashGoalRing();
   renderDashBarsChart();
   renderDashEficiencia();
+}
+
+function renderDashEntregas() {
+  // Mes en curso vs. mes anterior, igual que el resto de las tarjetas del Dashboard
+  const h = hoy();
+  const desde = new Date(h.getFullYear(), h.getMonth(), 1);
+  const hasta = new Date(h.getFullYear(), h.getMonth() + 1, 0);
+  const desdeP = new Date(h.getFullYear(), h.getMonth() - 1, 1);
+  const hastaP = new Date(h.getFullYear(), h.getMonth(), 0);
+  const act = promedioEntrega(desde, hasta);
+  const prev = promedioEntrega(desdeP, hastaP);
+  const txtEnt = (a, b, vacio) => a.cantidad === 0
+    ? vacio
+    : `${a.cantidad} entrega${a.cantidad === 1 ? '' : 's'} · mes anterior: ${formatDiasEntrega(b.promedio)}`;
+  $('dashKpiEntParcial').textContent = formatDiasEntrega(act.parcial.promedio);
+  $('dashKpiEntParcialSub').textContent = txtEnt(act.parcial, prev.parcial, 'Sin entregas parciales este mes');
+  $('dashKpiEntCompleta').textContent = formatDiasEntrega(act.completo.promedio);
+  $('dashKpiEntCompletaSub').textContent = txtEnt(act.completo, prev.completo, 'Sin entregas completas este mes');
+  $('dashKpiUrgencia').textContent = act.urgentes;
+  $('dashKpiUrgenciaSub').textContent = act.totalEntregas === 0
+    ? 'Sin entregas este mes'
+    : `${Math.round(act.urgentes / act.totalEntregas * 100)}% de las entregas · mes anterior: ${prev.urgentes}`;
 }
 
 function renderDashGoalRing() {
