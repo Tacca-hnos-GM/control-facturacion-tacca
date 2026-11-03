@@ -1614,6 +1614,15 @@
     background:#fff;
   }
 
+  details.plegable>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;margin-bottom:0;}
+  details.plegable>summary::-webkit-details-marker{display:none;}
+  details.plegable>summary::before{content:'▸';display:inline-block;transition:transform .15s;color:var(--text-muted);}
+  details.plegable[open]>summary::before{transform:rotate(90deg);}
+  details.plegable[open]>summary{margin-bottom:12px;}
+  .cliente-pedidos{flex-basis:100%;border-top:1px dashed var(--hairline);padding-top:8px;font-size:12.5px;}
+  .cliente-pedidos .cp-titulo{font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+  .cliente-pedidos .cp-item{margin:2px 0;}
+  .cliente-pedidos .cp-meta{color:var(--text-muted);font-family:var(--font-mono);font-size:11.5px;}
   .cliente-card{
     background:var(--card);
     border:1px solid var(--hairline);
@@ -2005,6 +2014,8 @@
         <button class="primary" id="btnGuardarPedido">Guardar pedido</button>
       </div>
     </div>
+
+    <div id="totalPedidos" style="font-family:var(--font-body);font-size:14px;margin:4px 0 12px;"></div>
 
     <div id="contenidoPedidos">
       <div class="loading">Cargando pedidos...</div>
@@ -2573,18 +2584,18 @@
       </div>
     </div>
 
-    <div class="chart-card">
-      <div class="chart-title">Ranking de clientes (histórico)</div>
+    <details class="chart-card plegable" id="detRanking">
+      <summary class="chart-title">Ranking de clientes (histórico)</summary>
       <table class="client-table">
         <thead>
           <tr><th>#</th><th>Cliente</th><th>Total histórico vendido</th><th>Facturas</th><th>Última compra</th><th>Debe actualmente</th></tr>
         </thead>
         <tbody id="rankingBody"></tbody>
       </table>
-    </div>
+    </details>
 
-    <div class="chart-card">
-      <div class="chart-title">⚠️ Clientes que más tardan en pagar</div>
+    <details class="chart-card plegable" id="detMorosos">
+      <summary class="chart-title">⚠️ Clientes que más tardan en pagar</summary>
       <p style="font-family:var(--font-body);font-size:12.5px;color:var(--text-muted);margin:-4px 0 12px;">Según el atraso promedio entre la fecha de vencimiento y la fecha en que efectivamente pagaron, más las facturas vencidas que tienen hoy sin cobrar.</p>
       <table class="client-table">
         <thead>
@@ -2592,7 +2603,7 @@
         </thead>
         <tbody id="morososBody"></tbody>
       </table>
-    </div>
+    </details>
 
     <div id="clientesList" style="margin-top:1.25rem;"></div>
   </div>
@@ -3535,8 +3546,20 @@ function pedidosFiltrados() {
   return lista;
 }
 
+function renderTotalPedidos(mostrados) {
+  const el = $('totalPedidos');
+  if (!el) return;
+  const total = pedidosPendientes.length;
+  const pend = pedidosPendientes.filter(p => !p.facturado).length;
+  const fact = total - pend;
+  const n = (mostrados == null) ? total : mostrados;
+  el.innerHTML = `<b>Total:</b> ${n} pedido${n === 1 ? '' : 's'}` +
+    `<span style="color:var(--text-muted);font-size:12.5px;"> &nbsp;·&nbsp; en el sistema: ${pend} pendiente${pend === 1 ? '' : 's'} de facturar, ${fact} ya facturado${fact === 1 ? '' : 's'} (${total} en total)</span>`;
+}
+
 function renderPedidos() {
   if (pedidosPendientes.length === 0) {
+    renderTotalPedidos(0);
     $('contenidoPedidos').innerHTML = `
       <div class="empty">
         <h3>Todavía no cargaste ningún pedido</h3>
@@ -3546,6 +3569,7 @@ function renderPedidos() {
     return;
   }
   const lista = pedidosFiltrados();
+  renderTotalPedidos(lista.length);
   if (lista.length === 0) {
     $('contenidoPedidos').innerHTML = `<div class="empty"><h3>No hay resultados</h3></div>`;
     return;
@@ -6986,6 +7010,22 @@ function renderRankingMorosos() {
   }).join('');
 }
 
+function pedidosActualesDeCliente(nombre) {
+  const k = String(nombre || '').trim().toLowerCase();
+  return pedidosPendientes
+    .filter(p => !p.facturado && String(p.cliente || '').trim().toLowerCase() === k)
+    .sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
+}
+
+function pedidosActualesHTML(c) {
+  const lista = pedidosActualesDeCliente(c.nombre);
+  if (!lista.length) return '';
+  return `<div class="cliente-pedidos">
+    <div class="cp-titulo">📦 Pedido actualmente (${lista.length})</div>
+    ${lista.map(p => `<div class="cp-item"><span class="cp-meta">${p.numero ? 'N° ' + escapeHtml(p.numero) + ' · ' : ''}${formatFecha(p.fecha)}</span> — ${escapeHtml(productosResumen(p))}${p.notas ? ` <span style="color:var(--text-muted);font-style:italic;">(${escapeHtml(p.notas)})</span>` : ''}</div>`).join('')}
+  </div>`;
+}
+
 function clienteCardHTML(c) {
   const stats = historicoPorCliente()[c.nombre] || {totalHistorico: 0, facturas: 0, ultimaCompra: null, debeActual: 0};
   const diasSinComprar = stats.ultimaCompra ? Math.round((hoy() - parseFecha(stats.ultimaCompra)) / 86400000) : null;
@@ -7015,6 +7055,7 @@ function clienteCardHTML(c) {
           <button class="iconbtn danger" onclick="eliminarCliente('${c.id}')">Eliminar</button>
         </div>
       </div>
+      ${pedidosActualesHTML(c)}
     </div>`;
 }
 
