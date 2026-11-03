@@ -3549,12 +3549,15 @@ function pedidosFiltrados() {
 function renderTotalPedidos(mostrados) {
   const el = $('totalPedidos');
   if (!el) return;
-  const total = pedidosPendientes.length;
-  const pend = pedidosPendientes.filter(p => !p.facturado).length;
-  const fact = total - pend;
-  const n = (mostrados == null) ? total : mostrados;
-  el.innerHTML = `<b>Total:</b> ${n} pedido${n === 1 ? '' : 's'}` +
-    `<span style="color:var(--text-muted);font-size:12.5px;"> &nbsp;·&nbsp; en el sistema: ${pend} pendiente${pend === 1 ? '' : 's'} de facturar, ${fact} ya facturado${fact === 1 ? '' : 's'} (${total} en total)</span>`;
+  const todos = pedidosPendientes;
+  const pend = todos.filter(p => !p.facturado);
+  const lista = (mostrados == null) ? todos : pedidosFiltrados();
+  const n = lista.length;
+  const items = lista.reduce((s, p) => s + cantidadTotalPedido(p), 0);
+  const itemsPend = pend.reduce((s, p) => s + cantidadTotalPedido(p), 0);
+  const fmt = (x) => Number(x).toLocaleString('es-AR');
+  el.innerHTML = `<b>Total:</b> ${n} pedido${n === 1 ? '' : 's'} · <b>${fmt(items)}</b> ítems pedidos` +
+    `<span style="color:var(--text-muted);font-size:12.5px;"> &nbsp;·&nbsp; pendientes de facturar: ${pend.length} pedido${pend.length === 1 ? '' : 's'} / ${fmt(itemsPend)} ítems</span>`;
 }
 
 function renderPedidos() {
@@ -7020,9 +7023,10 @@ function pedidosActualesDeCliente(nombre) {
 function pedidosActualesHTML(c) {
   const lista = pedidosActualesDeCliente(c.nombre);
   if (!lista.length) return '';
+  const items = lista.reduce((s, p) => s + cantidadTotalPedido(p), 0);
   return `<div class="cliente-pedidos">
-    <div class="cp-titulo">📦 Pedido actualmente (${lista.length})</div>
-    ${lista.map(p => `<div class="cp-item"><span class="cp-meta">${p.numero ? 'N° ' + escapeHtml(p.numero) + ' · ' : ''}${formatFecha(p.fecha)}</span> — ${escapeHtml(productosResumen(p))}${p.notas ? ` <span style="color:var(--text-muted);font-style:italic;">(${escapeHtml(p.notas)})</span>` : ''}</div>`).join('')}
+    <span class="cp-titulo" style="margin:0;">📦 Pedido actualmente:</span> <b>${items.toLocaleString('es-AR')} ítems</b>
+    <span class="cp-meta">(${lista.length} pedido${lista.length === 1 ? '' : 's'})</span>
   </div>`;
 }
 
